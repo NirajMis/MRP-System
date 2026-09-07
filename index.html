@@ -32,8 +32,9 @@
       <aside class="card"><h2>What this automation calculates</h2><p class="sub">Built for the output layout you shared.</p><div class="rules"><div class="rule"><i class="tick">✓</i><div><b>Plan</b><br>Groups SOD by item, sums Balance Qty, adds FG Stock and sets shortage to <em>max(required − FG stock, 0)</em>.</div></div><div class="rule"><i class="tick">✓</i><div><b>MRP</b><br>Explodes Plan shortage through the BOM, then adds Stock, Open PO and Open PR.</div></div><div class="rule"><i class="tick">✓</i><div><b>Stable supply values</b><br>Stock, Open PO and Open PR are always read from their own input sheets; changing SOD/BOM only changes demand.</div></div></div></aside>
     </section>
     <section class="card mapping" id="mapping"><h2>2. Confirm source sheets</h2><p class="sub">Detected automatically. Change a selection only if your workbook uses a different sheet name.</p><div class="map-grid" id="mapGrid"></div><div id="bomColumnMap"></div><div class="actions"><button class="primary" id="runBtn">Create Plan &amp; MRP</button><span class="status" id="status">Ready to calculate.</span></div></section>
+    <section class="card" id="dupCheck" style="display:none;border-color:#f3c1c6"><h2 style="color:#c4333e">⚠ Duplicate item codes found (FG Stock ⇔ Stock)</h2><p class="sub">The same Item Code was found in both the <b>FG Stock</b> sheet and <b>Stock</b> sheet. The<b>FG Stock</b> sheet should contain only FG codes, while the <b>Stock</b> sheet should contain only RM / PF / SFG codes..This overlap may result in duplicate or incorrect values in the Plan and MRP calculations —Therefore, the calculation has been stopped. Please correct the item code in the appropriate sheet in the source file and upload the file again.</p><div class="table-wrap" style="max-height:340px"><table id="dupTable"></table></div></section>
     <section class="summary" id="summary"><div class="stat"><span>Plan items</span><b id="planCount">0</b></div><div class="stat"><span>FG shortage</span><b id="fgShortage">0</b></div><div class="stat"><span>MRP items</span><b id="mrpCount">0</b></div><div class="stat accent"><span>New PR required</span><b id="newPr">0</b></div></section>
-    <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="downloadBtn" disabled>Download Excel output</button></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short. New PR = max(Required − Stock − Open PO − Open PR, 0).</div></section>
+    <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="downloadBtn"type="button">Download Excel output</button></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short. New PR = max(Required − Stock − Open PO − Open PR, 0).</div></section>
   </main>
 <script>
 (() => {
@@ -89,6 +90,28 @@
   function cell(row,key){return key ? row[key] : '';}
   function aggregate(data, s, label){ const out=new Map(); if(!s.code) throw new Error(`${label}: item-code column was not found. Use a heading such as Item Code, Item No. or Material Code.`); if(!s.qty) throw new Error(`${label}: quantity column was not found. Check for a heading such as FG Stock, Stock Qty, Open PO, Open PR, Balance Qty or Qty.`); data.forEach(row=>{const code=String(cell(row,s.code)).trim(),key=itemKey(code);if(!key)return;const previous=out.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};previous.qty+=number(cell(row,s.qty));if(!previous.description)previous.description=String(cell(row,s.description)).trim();out.set(key,previous)});return out; }
   function selected(key){return el(`map-${key}`).value}
+  // Validation: same Item Code should not exist in both FG Stock and Stock sheets.
+  // FG Stock must contain only FG codes; Stock must contain only RM/PF/SFG codes.
+  // This does not change aggregate()/makeResults() — it only reads the two sheets
+  // separately (using the same schema()/itemKey() rules) to report overlaps.
+  function duplicateItemsAcrossSheets(){
+    const fgRows=rows(selected('fgstock')), stockRows=rows(selected('stock'));
+    if(!fgRows.length || !stockRows.length) return [];
+    const fgS=stockSchema(fgRows,'fgstock'), stS=stockSchema(stockRows,'stock');
+    if(!fgS.code || !stS.code) return [];
+    const byKey=(data,s)=>{const map=new Map();data.forEach(row=>{const code=String(cell(row,s.code)).trim(),key=itemKey(code);if(!key)return;const prev=map.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};prev.qty+=number(cell(row,s.qty));if(!prev.description)prev.description=String(cell(row,s.description)).trim();map.set(key,prev)});return map;};
+    const fgMap=byKey(fgRows,fgS), stockMap=byKey(stockRows,stS);
+    const duplicates=[];
+    fgMap.forEach((fgRow,key)=>{const stRow=stockMap.get(key);if(stRow){duplicates.push({item:fgRow.item,description:fgRow.description||stRow.description,fgQty:fgRow.qty,stockQty:stRow.qty})}});
+    duplicates.sort((a,b)=>String(a.item).localeCompare(String(b.item),undefined,{numeric:true}));
+    return duplicates;
+  }
+  function renderDuplicateReport(duplicates){
+    const section=el('dupCheck');
+    if(!duplicates.length){section.style.display='none';el('dupTable').innerHTML='';return}
+    section.style.display='block';
+    el('dupTable').innerHTML=`<thead><tr><th>Item Code</th><th>Description</th><th class="num">FG Stock Qty</th><th class="num">Stock Qty</th></tr></thead><tbody>${duplicates.map(d=>`<tr><td>${esc(d.item)}</td><td>${esc(d.description)}</td><td class="num negative">${fmt(d.fgQty)}</td><td class="num negative">${fmt(d.stockQty)}</td></tr>`).join('')}</tbody>`;
+  }
   function makeResults(){
     if(!window.XLSX) throw new Error('Excel library could not load. Check your internet connection and reload this page.');
     const source={};required.forEach(([key,label])=>{source[key]=rows(selected(key));if(!source[key].length)throw new Error(`${label} sheet is empty or not selected.`)});
@@ -113,8 +136,7 @@
     const wb=XLSX.utils.book_new();
     // Retain the exact input SOD and BOM tabs in the downloadable file.
     // Their values are not recalculated or changed by the portal.
-    const styleFirstRow=ws=>{const range=ws['!ref']?XLSX.utils.decode_range(ws['!ref']):null;if(!range)return;ws['!rows']=ws['!rows']||[];ws['!rows'][0]={...(ws['!rows'][0]||{}),hpt:24};for(let c=range.s.c;c<=range.e.c;c++){const address=XLSX.utils.encode_cell({r:0,c});if(ws[address])ws[address].s=headerStyle}};
-    const copyInputSheet=(sourceName,outputName)=>{const source=workbook?.Sheets?.[sourceName];if(source){styleFirstRow(source);XLSX.utils.book_append_sheet(wb,source,outputName,true)}};
+    const copyInputSheet=(sourceName,outputName)=>{const source=workbook?.Sheets?.[sourceName];if(source) XLSX.utils.book_append_sheet(wb,source,outputName,true)};
     copyInputSheet(selected('sod'),'SOD');
     const headerStyle={fill:{fgColor:{rgb:'D9E1F2'}},font:{bold:true,color:{rgb:'000000'},sz:12},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'70AD47'}},bottom:{style:'thin',color:{rgb:'70AD47'}},left:{style:'thin',color:{rgb:'70AD47'}},right:{style:'thin',color:{rgb:'70AD47'}}}};
     const add=(name,headers,data,widths)=>{const ws=XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:data.length,c:headers.length-1}})};ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];headers.forEach((_,c)=>{const cell=ws[XLSX.utils.encode_cell({r:0,c})];cell.s=headerStyle});for(let r=1;r<=data.length;r++){for(let c=2;c<headers.length;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];if(cell){cell.z='#,##0.###';if(headers[c]==='Shortage'&&Number(cell.v)<0)cell.s={font:{color:{rgb:'C4333E'},bold:true},fill:{fgColor:{rgb:'FFF0F1'}}}}}}XLSX.utils.book_append_sheet(wb,ws,name)};
@@ -136,9 +158,19 @@
     makeSheet('open pr',['Item','Item Description','Open PR'],[10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',300],[16,58,14]);
     XLSX.writeFile(wb,'MRP_Input_Template.xlsx');
   }
-  async function loadFile(file){if(!file)return;setStatus('Reading workbook…');el('runBtn').disabled=true;try{const data=await file.arrayBuffer();workbook=XLSX.read(data,{type:'array',cellDates:true});filename=file.name.replace(/\.[^.]+$/,'');el('fileTitle').textContent=file.name;el('fileHint').textContent=`${workbook.SheetNames.length} sheets found: ${workbook.SheetNames.join(', ')}`;el('fileBadge').innerHTML='<span class="source-badge">Workbook loaded securely in your browser</span>';renderMappings();el('map-bom').addEventListener('change',e=>renderBomColumns(e.target.value));setStatus('Source sheets detected. Confirm and create your output.');el('runBtn').disabled=false}catch(e){setStatus(`Could not read file: ${e.message}`,true)}}
+  async function loadFile(file){if(!file)return;setStatus('Reading workbook…');el('runBtn').disabled=true;el('dupCheck').style.display='none';el('dupTable').innerHTML='';el('summary').classList.remove('show');el('output').classList.remove('show');try{const data=await file.arrayBuffer();workbook=XLSX.read(data,{type:'array',cellDates:true});filename=file.name.replace(/\.[^.]+$/,'');el('fileTitle').textContent=file.name;el('fileHint').textContent=`${workbook.SheetNames.length} sheets found: ${workbook.SheetNames.join(', ')}`;el('fileBadge').innerHTML='<span class="source-badge">Workbook loaded securely in your browser</span>';renderMappings();el('map-bom').addEventListener('change',e=>renderBomColumns(e.target.value));setStatus('Source sheets detected. Confirm and create your output.');el('runBtn').disabled=false}catch(e){setStatus(`Could not read file: ${e.message}`,true)}}
   el('fileInput').addEventListener('change',e=>loadFile(e.target.files[0]));const dz=el('dropZone');['dragenter','dragover'].forEach(evt=>dz.addEventListener(evt,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(evt=>dz.addEventListener(evt,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
-  el('runBtn').addEventListener('click',()=>{try{setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}`;el('downloadBtn').disabled=false;showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
+  el('runBtn').addEventListener('click',()=>{try{
+    setStatus('Checking FG Stock vs Stock item codes…');
+    const duplicates=duplicateItemsAcrossSheets();
+    renderDuplicateReport(duplicates);
+    if(duplicates.length){
+      el('summary').classList.remove('show');
+      el('output').classList.remove('show');
+      setStatus(`Stopped: ${duplicates.length} item code(s) mile FG Stock aur Stock dono sheets me. Neeche list check karein aur input file theek karke dobara upload karein.`,true);
+      return;
+    }
+    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}`;el('downloadBtn').disabled=false;showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showResults(t.dataset.view)));el('downloadBtn').addEventListener('click',exportResults);
   const themeToggle=el('themeToggle'),themeIcon=el('themeIcon'),themeText=el('themeText');
   const setTheme=theme=>{document.body.classList.toggle('dark',theme==='dark');themeIcon.textContent=theme==='dark'?'☀':'☾';themeText.textContent=theme==='dark'?'Light mode':'Dark mode';localStorage.setItem('mrp-theme',theme)};
