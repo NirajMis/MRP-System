@@ -31,7 +31,7 @@
       <div class="card"><h2>1. Upload your MRP input</h2><p class="sub">Your original workbook stays unchanged. Excel files only (.xlsx / .xls).</p><label class="drop" id="dropZone" for="fileInput"><div><div class="file-icon">⇧</div><strong id="fileTitle">Choose or drop an Excel workbook</strong><span id="fileHint">Workbook must contain the six source sheets.</span></div></label><input class="file-input" id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"><div id="fileBadge"></div><div class="template-row"><span>Need a format to start with?</span><button class="secondary template-btn" id="templateBtn" type="button">Download sample input template</button></div></div>
       <aside class="card"><h2>What this automation calculates</h2><p class="sub">Built for the output layout you shared.</p><div class="rules"><div class="rule"><i class="tick">✓</i><div><b>Plan</b><br>Groups SOD by item, sums Balance Qty, adds FG Stock and sets shortage to <em>max(required − FG stock, 0)</em>.</div></div><div class="rule"><i class="tick">✓</i><div><b>MRP</b><br>Explodes Plan shortage through the BOM, then adds Stock, Open PO and Open PR.</div></div><div class="rule"><i class="tick">✓</i><div><b>Stable supply values</b><br>Stock, Open PO and Open PR are always read from their own input sheets; changing SOD/BOM only changes demand.</div></div></div></aside>
     </section>
-    <section class="card mapping" id="mapping"><h2>2. Confirm source sheets</h2><p class="sub">Detected automatically. Change a selection only if your workbook uses a different sheet name.</p><div class="map-grid" id="mapGrid"></div><div id="bomColumnMap"></div><div class="actions"><button class="primary" id="runBtn">Create Plan &amp; MRP</button><span class="status" id="status">Ready to calculate.</span></div></section>
+    <section class="card mapping" id="mapping"><h2>2. Confirm source sheets</h2><p class="sub">Detected automatically. Change a selection only if your workbook uses a different sheet name.</p><div class="map-grid" id="mapGrid"></div><div id="bomColumnMap"></div><div class="note hidden" id="poprWarning"></div><div class="actions"><button class="primary" id="runBtn">Create Plan &amp; MRP</button><span class="status" id="status">Ready to calculate.</span></div></section>
     <section class="card" id="dupCheck" style="display:none;border-color:#f3c1c6"><h2 style="color:#c4333e">⚠ Duplicate item codes found (FG Stock ⇔ Stock)</h2><p class="sub">The same Item Code was found in both the <b>FG Stock</b> sheet and <b>Stock</b> sheet. The<b>FG Stock</b> sheet should contain only FG codes, while the <b>Stock</b> sheet should contain only RM / PF / SFG codes..This overlap may result in duplicate or incorrect values in the Plan and MRP calculations —Therefore, the calculation has been stopped. Please correct the item code in the appropriate sheet in the source file and upload the file again.</p><div class="table-wrap" style="max-height:340px"><table id="dupTable"></table></div></section>
     <section class="summary" id="summary"><div class="stat"><span>Plan items</span><b id="planCount">0</b></div><div class="stat"><span>FG shortage</span><b id="fgShortage">0</b></div><div class="stat"><span>MRP items</span><b id="mrpCount">0</b></div><div class="stat accent"><span>New PR required</span><b id="newPr">0</b></div></section>
     <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="downloadBtn"type="button">Download Excel output</button></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short. New PR = max(Required − Stock − Open PO − Open PR, 0).</div></section>
@@ -48,12 +48,35 @@
   // Excel may store the same item as a number in one sheet and text in another.
   // Keep the original value for display, but use one consistent key for all lookups.
   const itemKey = value => String(value ?? '').trim().replace(/\.0+$/,'').replace(/\s+/g,'').toUpperCase();
+  // Many ERP exports append a "Grand Total" / "Total" / "Sub Total" row at the bottom
+  // of Stock, FG Stock and similar sheets. That label isn't a real item code, and the
+  // same label showing up at the bottom of two sheets isn't a genuine duplicate item —
+  // it must never be aggregated as an item or trip the FG-Stock-vs-Stock duplicate check.
+  const isTotalLabel = value => { const n = normalize(value); return !!n && /^(grand|sub|net)?total/.test(n); };
   const fmt = n => new Intl.NumberFormat('en-IN',{maximumFractionDigits:3}).format(n || 0);
   const setStatus=(message,error=false)=>{el('status').textContent=message;el('status').className='status'+(error?' error':'')};
   const close = (a,b) => normalize(a).includes(normalize(b));
   function sheetScore(name, key){ const n=normalize(name); if(key==='fgstock') return n.includes('fg') && n.includes('stock') ? 100 : 0; if(key==='stock') return n==='stock'?100:(n.includes('stock')&&!n.includes('fg')?40:0); return n===key?100:(n.includes(key)?70:0); }
   function defaultSheet(key){ return workbook.SheetNames.map(name=>[name,sheetScore(name,key)]).sort((a,b)=>b[1]-a[1])[0]?.[1] ? workbook.SheetNames.map(name=>[name,sheetScore(name,key)]).sort((a,b)=>b[1]-a[1])[0][0] : ''; }
-  function renderMappings(){ const grid=el('mapGrid'); grid.innerHTML=''; required.forEach(([key,label])=>{const wrap=document.createElement('div');wrap.className='field';const options=['<option value="">— select sheet —</option>',...workbook.SheetNames.map(n=>`<option value="${esc(n)}" ${n===defaultSheet(key)?'selected':''}>${esc(n)}</option>`)];wrap.innerHTML=`<label>${label}</label><select id="map-${key}">${options.join('')}</select>`;grid.appendChild(wrap)});renderBomColumns(defaultSheet('bom'));el('mapping').classList.add('show'); }
+  function renderMappings(){ const grid=el('mapGrid'); grid.innerHTML=''; required.forEach(([key,label])=>{const wrap=document.createElement('div');wrap.className='field';const options=['<option value="">— select sheet —</option>',...workbook.SheetNames.map(n=>`<option value="${esc(n)}" ${n===defaultSheet(key)?'selected':''}>${esc(n)}</option>`)];wrap.innerHTML=`<label>${label}</label><select id="map-${key}">${options.join('')}</select>`;grid.appendChild(wrap)});renderBomColumns(defaultSheet('bom'));el('mapping').classList.add('show');renderPoPrWarning();el('map-openpo').addEventListener('change',renderPoPrWarning);el('map-openpr').addEventListener('change',renderPoPrWarning); }
+  // Some ERP exports mislabel these two sheets: the tab picked as "Open PO" may
+  // contain a column literally headed "Open PR" (or vice versa). The portal reads
+  // whichever sheet tab is mapped to each field, so a mismatch here means the
+  // numbers could be attributed to the wrong bucket. We only warn — we don't
+  // guess which of the tab name or the column heading is the mistake.
+  function poPrLabelWarning(){
+    const poRows=rows(selected('openpo')), prRows=rows(selected('openpr'));
+    if(!poRows.length || !prRows.length) return '';
+    const poHeader=stockSchema(poRows,'po').qty, prHeader=stockSchema(prRows,'pr').qty;
+    const poSaysPr = poHeader && normalize(poHeader)==='openpr';
+    const prSaysPo = prHeader && normalize(prHeader)==='openpo';
+    if(!poSaysPr && !prSaysPo) return '';
+    const parts=[];
+    if(poSaysPr) parts.push(`your Open PO sheet's quantity column is headed "${poHeader}"`);
+    if(prSaysPo) parts.push(`your Open PR sheet's quantity column is headed "${prHeader}"`);
+    return `⚠ Check your source file: ${parts.join(' and ')}. The sheet tab name and the column heading disagree on which is PO and which is PR. The portal uses whichever tab you mapped to each field above — please confirm that mapping is correct before trusting the New PR numbers.`;
+  }
+  function renderPoPrWarning(){ const box=el('poprWarning'); let message=''; try{ message=poPrLabelWarning(); }catch(e){ message=''; } if(message){ box.textContent=message; box.classList.remove('hidden'); } else { box.classList.add('hidden'); box.textContent=''; } }
   function renderBomColumns(sheetName){const target=el('bomColumnMap'),data=rows(sheetName),detected=bomSchema(data),headers=detected.headers||[];if(!headers.length){target.innerHTML='';return}const select=(id,label,value)=>`<div class="field"><label>${label}</label><select id="${id}"><option value="">— auto detect —</option>${headers.map(h=>`<option value="${esc(h)}" ${h===value?'selected':''}>${esc(h)}</option>`).join('')}</select></div>`;target.innerHTML=`<p class="sub" style="margin:20px 0 10px"><b>BOM columns</b> — verify these if the component pivot is blank.</p><div class="map-grid">${select('bom-parent','Finished-good / parent item',detected.parent)}${select('bom-child','Component / child item',detected.child)}${select('bom-qty','BOM quantity per FG',detected.qty)}</div>`;}
   function esc(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
   function rows(sheetName){if(!sheetName) return []; const sheet=workbook.Sheets[sheetName]; return XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});}
@@ -68,10 +91,27 @@
     }).filter(c=>c.score>=0.7).sort((a,b)=>b.score-a.score);
     return candidates[0]?.header||'';
   }
+  // If no header matches a known item-code wording at all (e.g. "SKU", "Product", a
+  // language-specific label, or a title row that shifted the real header down), fall
+  // back to the leftmost column that actually holds data in most sample rows — every
+  // ERP export we've seen puts the identifier there, whatever it's called.
+  function fallbackCodeKey(data, excluded=[]){
+    const sample=data.slice(0,50), headers=Object.keys(sample.find(r=>Object.values(r).some(v=>v!==''))||{});
+    const minFilled=Math.max(1,Math.ceil(sample.length*0.5));
+    return headers.find(header=>{
+      if(excluded.includes(header)) return false;
+      const filled=sample.filter(row=>{const v=cell(row,header);return v!==''&&v!==null&&v!==undefined}).length;
+      return filled>=minFilled;
+    })||'';
+  }
   function schema(data,type){
     const sample=data.find(r=>Object.values(r).some(v=>v!==''))||{};
-    const code=findKey(sample,['itemcode','itemno','itemnumber','item','materialcode','materialno','materialnumber','partno','partnumber']);
-    const description=findKey(sample,['itemdescription','description','materialdescription','partdescription','desc']);
+    let code=findKey(sample,['itemcode','itemno','itemnumber','item','materialcode','materialno','materialnumber','partno','partnumber']);
+    let description=findKey(sample,['itemdescription','description','materialdescription','partdescription','desc']);
+    // findKey's loose contains-match can pick the code column itself as "description"
+    // (e.g. a header simply named "Item" is a substring-match target for "itemdescription").
+    // A sheet with no real description column should report none, not duplicate the code.
+    if(description===code) description='';
     const quantityFields={
       sod:['balanceqty','balancequantity','pendingqty','openqty','requiredqty','reqqty','quantity','qty'],
       fgstock:['fgstock','fgstockqty','fgqty','finishedgoodstock','availablefgstock','quantity','qty','stock'],
@@ -83,12 +123,15 @@
     // Some ERP exports use custom quantity headings. For supply sheets, select
     // the best remaining numeric column rather than silently calculating zero.
     if(!qty && ['fgstock','stock','po','pr'].includes(type)) qty=fallbackQuantityKey(data,[code,description]);
+    // No header matched a known item-code wording at all — fall back to the leftmost
+    // populated column instead of failing, so unusual/custom headers still work.
+    if(!code) code=fallbackCodeKey(data,[description,qty]);
     return {code,description,qty};
   }
   function stockSchema(data,type){const base=schema(data,type);return base;}
-  function bomSchema(data){const sample=data.find(r=>Object.values(r).some(v=>v!==''))||{};const keys=Object.keys(sample), pairs=keys.map(k=>[k,normalize(k)]); const get=(choices,avoid=[])=>{for(const c of choices){const hit=pairs.find(([,n])=>n===normalize(c));if(hit)return hit[0]}for(const c of choices){const hit=pairs.find(([,n])=>n.includes(normalize(c))&&!avoid.some(a=>n.includes(normalize(a))));if(hit)return hit[0]}return ''}; let parent=get(['fg','parentitem','parentitemcode','parentitemno','parentitemnumber','parentcode','parentmaterial','fgitem','fgitemcode','fgitemno','fgitemnumber','fgcode','fgmaterial','assemblyitem','assemblyitemno','finishedgood','finishedgoodcode','headeritem','productcode']);let child=get(['childitem','childitemcode','childitemno','childitemnumber','childcode','componentitem','componentitemcode','componentitemno','componentitemnumber','componentcode','componentmaterial','rawmaterial','rawmaterialcode','materialcode','bomitem','itemcode','itemno','item'],['parent','fg','assembly','finished','header']);let qty=get(['quantity','bomqty','bomquantity','qtyper','qtyperassembly','quantityper','perquantity','componentqty','usageqty','usage','requiredqty','qty']);let description=get(['itemdescription','componentdescription','childdescription','materialdescription','description']); if(parent===child) child=''; return {parent,child,qty,description,headers:keys};}
+  function bomSchema(data){const sample=data.find(r=>Object.values(r).some(v=>v!==''))||{};const keys=Object.keys(sample), pairs=keys.map(k=>[k,normalize(k)]); const get=(choices,avoid=[])=>{for(const c of choices){const hit=pairs.find(([,n])=>n===normalize(c));if(hit)return hit[0]}for(const c of choices){const hit=pairs.find(([,n])=>n.includes(normalize(c))&&!avoid.some(a=>n.includes(normalize(a))));if(hit)return hit[0]}return ''}; let parent=get(['fg','parentitem','parentitemcode','parentitemno','parentitemnumber','parentcode','parentmaterial','fgitem','fgitemcode','fgitemno','fgitemnumber','fgcode','fgmaterial','assemblyitem','assemblyitemno','finishedgood','finishedgoodcode','headeritem','productcode']);let child=get(['childitem','childitemcode','childitemno','childitemnumber','childcode','componentitem','componentitemcode','componentitemno','componentitemnumber','componentcode','componentmaterial','rawmaterial','rawmaterialcode','materialcode','bomitem','itemcode','itemno','item'],['parent','fg','assembly','finished','header']);let qty=get(['quantity','bomqty','bomquantity','qtyper','qtyperassembly','quantityper','perquantity','componentqty','usageqty','usage','requiredqty','qty']);let description=get(['itemdescription','componentdescription','childdescription','materialdescription','description']); let parentDescription=get(['fgitemdescription','fgdescription','parentitemdescription','parentdescription','assemblydescription','headeritemdescription','finishedgooddescription']); if(description===parent||description===child) description=''; if(parentDescription===parent||parentDescription===child) parentDescription=''; if(parent===child) child=''; return {parent,child,qty,description,parentDescription,headers:keys};}
   function cell(row,key){return key ? row[key] : '';}
-  function aggregate(data, s, label){ const out=new Map(); if(!s.code) throw new Error(`${label}: item-code column was not found. Use a heading such as Item Code, Item No. or Material Code.`); if(!s.qty) throw new Error(`${label}: quantity column was not found. Check for a heading such as FG Stock, Stock Qty, Open PO, Open PR, Balance Qty or Qty.`); data.forEach(row=>{const code=String(cell(row,s.code)).trim(),key=itemKey(code);if(!key)return;const previous=out.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};previous.qty+=number(cell(row,s.qty));if(!previous.description)previous.description=String(cell(row,s.description)).trim();out.set(key,previous)});return out; }
+  function aggregate(data, s, label){ const out=new Map(); if(!s.code) throw new Error(`${label}: item-code column was not found. Use a heading such as Item Code, Item No. or Material Code.`); if(!s.qty) throw new Error(`${label}: quantity column was not found. Check for a heading such as FG Stock, Stock Qty, Open PO, Open PR, Balance Qty or Qty.`); data.forEach(row=>{const code=String(cell(row,s.code)).trim();if(isTotalLabel(code))return;const key=itemKey(code);if(!key)return;const previous=out.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};previous.qty+=number(cell(row,s.qty));if(!previous.description)previous.description=String(cell(row,s.description)).trim();out.set(key,previous)});return out; }
   function selected(key){return el(`map-${key}`).value}
   // Validation: same Item Code should not exist in both FG Stock and Stock sheets.
   // FG Stock must contain only FG codes; Stock must contain only RM/PF/SFG codes.
@@ -99,7 +142,7 @@
     if(!fgRows.length || !stockRows.length) return [];
     const fgS=stockSchema(fgRows,'fgstock'), stS=stockSchema(stockRows,'stock');
     if(!fgS.code || !stS.code) return [];
-    const byKey=(data,s)=>{const map=new Map();data.forEach(row=>{const code=String(cell(row,s.code)).trim(),key=itemKey(code);if(!key)return;const prev=map.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};prev.qty+=number(cell(row,s.qty));if(!prev.description)prev.description=String(cell(row,s.description)).trim();map.set(key,prev)});return map;};
+    const byKey=(data,s)=>{const map=new Map();data.forEach(row=>{const code=String(cell(row,s.code)).trim();if(isTotalLabel(code))return;const key=itemKey(code);if(!key)return;const prev=map.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};prev.qty+=number(cell(row,s.qty));if(!prev.description)prev.description=String(cell(row,s.description)).trim();map.set(key,prev)});return map;};
     const fgMap=byKey(fgRows,fgS), stockMap=byKey(stockRows,stS);
     const duplicates=[];
     fgMap.forEach((fgRow,key)=>{const stRow=stockMap.get(key);if(stRow){duplicates.push({item:fgRow.item,description:fgRow.description||stRow.description,fgQty:fgRow.qty,stockQty:stRow.qty})}});
@@ -117,9 +160,18 @@
     const source={};required.forEach(([key,label])=>{source[key]=rows(selected(key));if(!source[key].length)throw new Error(`${label} sheet is empty or not selected.`)});
     const sodS=schema(source.sod,'sod'), fgS=stockSchema(source.fgstock,'fgstock'), stockS=stockSchema(source.stock,'stock'), poS=stockSchema(source.openpo,'po'), prS=stockSchema(source.openpr,'pr');
     const sod=aggregate(source.sod,sodS,'SOD'), fg=aggregate(source.fgstock,fgS,'FG Stock'), stock=aggregate(source.stock,stockS,'Stock'), po=aggregate(source.openpo,poS,'Open PO'), pr=aggregate(source.openpr,prS,'Open PR');
-    const plan=[...sod.values()].map(r=>{const available=fg.get(itemKey(r.item))?.qty||0;return {item:r.item,description:r.description||fg.get(itemKey(r.item))?.description||'',required:r.qty,fgStock:available,shortage:Math.max(r.qty-available,0)}}).sort((a,b)=>a.item.localeCompare(b.item,undefined,{numeric:true}));
     const bData=source.bom,bS=bomSchema(bData);bS.parent=el('bom-parent')?.value||bS.parent;bS.child=el('bom-child')?.value||bS.child;bS.qty=el('bom-qty')?.value||bS.qty;if(!bS.parent||!bS.child||!bS.qty){const cols=bS.headers.join(', ');throw new Error(`BOM mapping needs Parent Item, Component/Child Item, and Qty columns. Detected headers: ${cols||'none'}.`)}
-    const bomByParent=new Map();bData.forEach(row=>{const parent=String(cell(row,bS.parent)).trim(),child=String(cell(row,bS.child)).trim(),qty=number(cell(row,bS.qty));if(!parent||!child||!qty)return;const entry={item:child,description:String(cell(row,bS.description)).trim(),qty};const parentKey=itemKey(parent);if(!bomByParent.has(parentKey))bomByParent.set(parentKey,[]);bomByParent.get(parentKey).push(entry)});
+    // FG Stock / Stock / Open PO / Open PR sheets may not carry a description column at all
+    // (some exports only have Item Code + Qty). SOD's own description is the first choice for
+    // Plan; if that's blank too, fall back to the BOM's own "FG Item Description" column so a
+    // description is still shown instead of a blank cell.
+    const fgDescByParent=new Map();if(bS.parentDescription)bData.forEach(row=>{const parent=String(cell(row,bS.parent)).trim();const pk=itemKey(parent);if(!pk||fgDescByParent.has(pk))return;const d=String(cell(row,bS.parentDescription)).trim();if(d)fgDescByParent.set(pk,d)});
+    const plan=[...sod.values()].map(r=>{const available=fg.get(itemKey(r.item))?.qty||0;return {item:r.item,description:r.description||fg.get(itemKey(r.item))?.description||fgDescByParent.get(itemKey(r.item))||'',required:r.qty,fgStock:available,shortage:Math.max(r.qty-available,0)}}).sort((a,b)=>a.item.localeCompare(b.item,undefined,{numeric:true}));
+    // Some ERP BOM exports include a "Depth 1" row per FG where Item == FG itself
+    // (the finished good referencing its own code, qty 1). That is BOM metadata,
+    // not a real component — including it would make the FG's own shortage
+    // reappear as a fake MRP requirement with no stock/PO/PR coverage.
+    const bomByParent=new Map();bData.forEach(row=>{const parent=String(cell(row,bS.parent)).trim(),child=String(cell(row,bS.child)).trim(),qty=number(cell(row,bS.qty));if(!parent||!child||!qty)return;if(isTotalLabel(parent)||isTotalLabel(child))return;if(itemKey(parent)===itemKey(child))return;const entry={item:child,description:String(cell(row,bS.description)).trim(),qty};const parentKey=itemKey(parent);if(!bomByParent.has(parentKey))bomByParent.set(parentKey,[]);bomByParent.get(parentKey).push(entry)});
     // MRP is a pivot of the BOM: net Plan shortage × BOM quantity for each component.
     // This matches the calculation workbook: FG stock is first netted in PLAN.
     const requirements=new Map(); let unmatched=0;plan.forEach(p=>{if(!p.shortage)return;const components=bomByParent.get(itemKey(p.item));if(!components){unmatched++;return}components.forEach(c=>{const key=itemKey(c.item),r=requirements.get(key)||{item:c.item,description:c.description,required:0};r.required+=p.shortage*c.qty;if(!r.description)r.description=c.description;requirements.set(key,r)})});
@@ -170,7 +222,7 @@
       setStatus(`Stopped: ${duplicates.length} item code(s) mile FG Stock aur Stock dono sheets me. Neeche list check karein aur input file theek karke dobara upload karein.`,true);
       return;
     }
-    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}`;el('downloadBtn').disabled=false;showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
+    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');const poprNote=poPrLabelWarning();el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}${poprNote?` ${poprNote}`:''}`;el('downloadBtn').disabled=false;showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showResults(t.dataset.view)));el('downloadBtn').addEventListener('click',exportResults);
   const themeToggle=el('themeToggle'),themeIcon=el('themeIcon'),themeText=el('themeText');
   const setTheme=theme=>{document.body.classList.toggle('dark',theme==='dark');themeIcon.textContent=theme==='dark'?'☀':'☾';themeText.textContent=theme==='dark'?'Light mode':'Dark mode';localStorage.setItem('mrp-theme',theme)};
