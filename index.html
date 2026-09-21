@@ -15,6 +15,7 @@
     .appbar-inner{width:min(1440px,100%);padding:0 28px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;gap:11px;align-items:center;color:#172b4d;text-decoration:none}.brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#ff8128,#e95412);color:#fff;font-weight:900;font-size:19px;box-shadow:0 6px 13px #ec661c3b}.brand b{display:block;font-size:16px;letter-spacing:.01em}.brand small{display:block;margin-top:1px;font-size:11px;color:#74849a}.appbar-right{display:flex;gap:12px;align-items:center}.secure-badge{font-size:12px;color:#53657b;font-weight:650}.secure-badge i{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:#1baa78}.theme-toggle{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #d9e2eb;background:#f7f9fc;color:#283f5d;border-radius:9px;font-size:12px;box-shadow:none}.theme-toggle:hover{background:#edf3f8;border-color:#bfcddd}.service-strip{background:#163b65;color:#dceafa;text-align:center;font-size:12px;font-weight:650;padding:7px 16px}.shell{padding-top:24px}.hero{background:linear-gradient(115deg,#fff 5%,#f4f9fd 65%,#fff1e7);border-color:#dce7f0;position:relative;overflow:hidden}.hero:after{content:'';position:absolute;width:230px;height:230px;right:-94px;bottom:-150px;border-radius:50%;border:42px solid #f371211a}.hero h1{font-weight:780;letter-spacing:-.035em}.hero p{color:#5c7087}.card{border-radius:14px;box-shadow:0 9px 25px #213b5910}.drop{border-radius:12px;background:#f8fbfe;border-color:#bad5e9}.drop:hover,.drop.drag{background:#f1f8ff;border-color:#ef681b}.primary{background:linear-gradient(135deg,#f87723,#e95714);box-shadow:0 8px 16px #ef691d3d}.primary:hover{background:#dc5512}.secondary{background:#edf4fa;color:#174f84}.stat{border-radius:12px}.stat.accent{background:linear-gradient(135deg,#fff3e9,#fffaf5);border-color:#ffd8bc}.tabs{gap:18px}.tab{font-size:13px;font-weight:800;letter-spacing:.04em}.tab.active{color:#df5714;background:transparent;border-bottom:3px solid #f27422}.table-wrap{border-radius:12px}.note{border-left:4px solid #f47727;background:#fff8ee;color:#80591c}.source-badge{background:#eaf8f3;color:#087d75}.field select:focus{outline:3px solid #ffdfc9;border-color:#ed6c1d}
     body.dark{--mist:#0e1621;--line:#29394d;--ink:#e7eef7;--muted:#9aabbe;background:#0e1621;color:#e7eef7}.dark .appbar{background:#121d2a;border-color:#26364a;box-shadow:none}.dark .brand{color:#f3f7fb}.dark .brand small{color:#91a2b5}.dark .secure-badge{color:#b0bed0}.dark .theme-toggle{background:#1a2939;border-color:#35475c;color:#e6eef8}.dark .theme-toggle:hover{background:#22364a}.dark .service-strip{background:#0a111a;color:#a5b7ca}.dark .hero{background:linear-gradient(115deg,#142536,#132b41 65%,#3a251b);border-color:#2d435a;color:#f2f6fb;box-shadow:none}.dark .hero p{color:#b8c9d9}.dark .hero:after{border-color:#f3712121}.dark .card,.dark .stat{background:#142131;border-color:#293c51;box-shadow:none}.dark .drop{background:#102030;border-color:#3a5872}.dark .drop:hover,.dark .drop.drag{background:#142c40;border-color:#f47727}.dark .drop span,.dark .sub,.dark .status{color:#aebed0}.dark .field select{background:#102030;color:#e7eef7;border-color:#344a61}.dark .summary .stat.accent{background:linear-gradient(135deg,#2e251d,#1b2935);border-color:#644329}.dark th{background:#1b2b3c;color:#c9d9e9}.dark td{border-color:#26384b}.dark tbody tr:hover td{background:#1a2c3e}.dark .table-wrap{border-color:#2d435a}.dark .secondary{background:#20364b;color:#d6e9fb}.dark .note{background:#2b251b;color:#ecd19c}.dark .source-badge{background:#153a38;color:#8ee1d8}.dark .negative{background:#3a2028;color:#ff9ea9}.dark .zero{color:#8496aa}
     @media(max-width:620px){.appbar{height:auto}.appbar-inner{padding:12px 16px}.secure-badge{display:none}.theme-toggle{padding:8px 9px}.theme-toggle span:last-child{display:none}.service-strip{font-size:10px}.shell{padding-left:16px;padding-right:16px}.hero{padding:28px 24px}}
+    .multi{color:#b45309;font-weight:700}.grp td{border-top:2px solid #cfdceb}.dark .multi{color:#f5b767}.dark .grp td{border-top-color:#3a5872}
   </style>
 </head>
 <body>
@@ -26,21 +27,24 @@
   </header>
   <div class="service-strip">Planning workspace · Upload, calculate, review and export your MRP output securely.</div>
   <main class="shell">
-    <section class="hero"><div class="hero-kicker">Production planning workspace</div><h1>Turn your SOD into a clean MRP plan.</h1><p>Upload one workbook with SOD, BOM, FG Stock, Stock, Open PO and Open PR sheets. The portal creates de-duplicated Plan and MRP sheets and exports them as an Excel file.</p></section>
+    <section class="hero"><div class="hero-kicker">Production planning workspace</div><h1>Turn your SOD into a clean MRP plan.</h1><p>Upload one workbook with SOD, BOM, FG Stock, Stock, Open PO and Open PR sheets (plus optional Alternative and 3 Month Cons. sheets). The portal creates de-duplicated Plan and MRP sheets and exports them as an Excel file.</p></section>
     <section class="grid">
-      <div class="card"><h2>1. Upload your MRP input</h2><p class="sub">Your original workbook stays unchanged. Excel files only (.xlsx / .xls).</p><label class="drop" id="dropZone" for="fileInput"><div><div class="file-icon">⇧</div><strong id="fileTitle">Choose or drop an Excel workbook</strong><span id="fileHint">Workbook must contain the six source sheets.</span></div></label><input class="file-input" id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"><div id="fileBadge"></div><div class="template-row"><span>Need a format to start with?</span><button class="secondary template-btn" id="templateBtn" type="button">Download sample input template</button></div></div>
-      <aside class="card"><h2>What this automation calculates</h2><p class="sub">Built for the output layout you shared.</p><div class="rules"><div class="rule"><i class="tick">✓</i><div><b>Plan</b><br>Groups SOD by item, sums Balance Qty, adds FG Stock and sets shortage to <em>max(required − FG stock, 0)</em>.</div></div><div class="rule"><i class="tick">✓</i><div><b>MRP</b><br>Explodes Plan shortage through the BOM, then adds Stock, Open PO and Open PR.</div></div><div class="rule"><i class="tick">✓</i><div><b>Stable supply values</b><br>Stock, Open PO and Open PR are always read from their own input sheets; changing SOD/BOM only changes demand.</div></div></div></aside>
+      <div class="card"><h2>1. Upload your MRP input</h2><p class="sub">Your original workbook stays unchanged. Excel files only (.xlsx / .xls).</p><label class="drop" id="dropZone" for="fileInput"><div><div class="file-icon">⇧</div><strong id="fileTitle">Choose or drop an Excel workbook</strong><span id="fileHint">Workbook must contain the six source sheets. Alternative and 3 Month Cons. sheets are optional.</span></div></label><input class="file-input" id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"><div id="fileBadge"></div><div class="template-row"><span>Need a format to start with?</span><button class="secondary template-btn" id="templateBtn" type="button">Download sample input template</button></div></div>
+      <aside class="card"><h2>What this automation calculates</h2><p class="sub">Built for the output layout you shared.</p><div class="rules"><div class="rule"><i class="tick">✓</i><div><b>Plan</b><br>Groups SOD by item, sums Balance Qty, adds FG Stock and sets shortage to <em>max(required − FG stock, 0)</em>.</div></div><div class="rule"><i class="tick">✓</i><div><b>MRP</b><br>Explodes Plan shortage through the BOM, then adds Stock, Open PO and Open PR.</div></div><div class="rule"><i class="tick">✓</i><div><b>Remarks · Alternative · 3 Month Cons.</b><br>Remarks is a blank column for your notes. Alternative and 3 Month Cons. are looked up by item code from optional input sheets; every alternative of an item is kept and duplicates are listed via a button.</div></div><div class="rule"><i class="tick">✓</i><div><b>Stable supply values</b><br>Stock, Open PO and Open PR are always read from their own input sheets; changing SOD/BOM only changes demand.</div></div></div></aside>
     </section>
     <section class="card mapping" id="mapping"><h2>2. Confirm source sheets</h2><p class="sub">Detected automatically. Change a selection only if your workbook uses a different sheet name.</p><div class="map-grid" id="mapGrid"></div><div id="bomColumnMap"></div><div class="note hidden" id="poprWarning"></div><div class="actions"><button class="primary" id="runBtn">Create Plan &amp; MRP</button><span class="status" id="status">Ready to calculate.</span></div></section>
     <section class="card" id="dupCheck" style="display:none;border-color:#f3c1c6"><h2 style="color:#c4333e">⚠ Duplicate item codes found (FG Stock ⇔ Stock)</h2><p class="sub">The same Item Code was found in both the <b>FG Stock</b> sheet and <b>Stock</b> sheet. The<b>FG Stock</b> sheet should contain only FG codes, while the <b>Stock</b> sheet should contain only RM / PF / SFG codes..This overlap may result in duplicate or incorrect values in the Plan and MRP calculations —Therefore, the calculation has been stopped. Please correct the item code in the appropriate sheet in the source file and upload the file again.</p><div class="table-wrap" style="max-height:340px"><table id="dupTable"></table></div></section>
     <section class="summary" id="summary"><div class="stat"><span>Plan items</span><b id="planCount">0</b></div><div class="stat"><span>FG shortage</span><b id="fgShortage">0</b></div><div class="stat"><span>MRP items</span><b id="mrpCount">0</b></div><div class="stat accent"><span>New PR required</span><b id="newPr">0</b></div></section>
-    <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="downloadBtn"type="button">Download Excel output</button></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short. New PR = max(Required − Stock − Open PO − Open PR, 0).</div></section>
+    <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="altBtn" type="button" style="display:none"></button><button class="secondary" id="downloadBtn"type="button">Download Excel output</button></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="hidden" id="altPanel" style="margin-top:16px"><p class="sub" id="altSummary" style="margin:0 0 10px"></p><div class="table-wrap" style="max-height:340px"><table id="altTable"></table></div></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short. New PR = max(Required − Stock − Open PO − Open PR, 0). <b>Remarks</b> is left blank for your own notes. <b>Alternative</b> shows the first alternative code from the Alternative sheet (with “+N more” when an item has several), and <b>3 Month Cons.</b> is looked up by item code (0 if not found).</div></section>
   </main>
 <script>
 (() => {
   const required = [
     ['sod','SOD'],['bom','BOM'],['fgstock','FG Stock'],['stock','Stock'],['openpo','Open PO'],['openpr','Open PR']
   ];
+  // Optional lookup sheets. If a workbook doesn't have them, the MRP sheet simply leaves
+  // the Alternative / 3 Month Cons. columns blank instead of failing.
+  const optionalSheets = [['alt','Alternative'],['cons','3 Month Cons.']];
   let workbook, results, filename = 'MRP_Output';
   const el = id => document.getElementById(id);
   const normalize = value => String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g,'').trim();
@@ -56,9 +60,9 @@
   const fmt = n => new Intl.NumberFormat('en-IN',{maximumFractionDigits:3}).format(n || 0);
   const setStatus=(message,error=false)=>{el('status').textContent=message;el('status').className='status'+(error?' error':'')};
   const close = (a,b) => normalize(a).includes(normalize(b));
-  function sheetScore(name, key){ const n=normalize(name); if(key==='fgstock') return n.includes('fg') && n.includes('stock') ? 100 : 0; if(key==='stock') return n==='stock'?100:(n.includes('stock')&&!n.includes('fg')?40:0); return n===key?100:(n.includes(key)?70:0); }
+  function sheetScore(name, key){ const n=normalize(name); if(key==='fgstock') return n.includes('fg') && n.includes('stock') ? 100 : 0; if(key==='stock') return n==='stock'?100:(n.includes('stock')&&!n.includes('fg')?40:0); if(key==='alt') return n.includes('alternat')?100:0; if(key==='cons') return (n.includes('3month')||n.includes('consum')||n==='cons'||n==='3mcons')?100:0; return n===key?100:(n.includes(key)?70:0); }
   function defaultSheet(key){ return workbook.SheetNames.map(name=>[name,sheetScore(name,key)]).sort((a,b)=>b[1]-a[1])[0]?.[1] ? workbook.SheetNames.map(name=>[name,sheetScore(name,key)]).sort((a,b)=>b[1]-a[1])[0][0] : ''; }
-  function renderMappings(){ const grid=el('mapGrid'); grid.innerHTML=''; required.forEach(([key,label])=>{const wrap=document.createElement('div');wrap.className='field';const options=['<option value="">— select sheet —</option>',...workbook.SheetNames.map(n=>`<option value="${esc(n)}" ${n===defaultSheet(key)?'selected':''}>${esc(n)}</option>`)];wrap.innerHTML=`<label>${label}</label><select id="map-${key}">${options.join('')}</select>`;grid.appendChild(wrap)});renderBomColumns(defaultSheet('bom'));el('mapping').classList.add('show');renderPoPrWarning();el('map-openpo').addEventListener('change',renderPoPrWarning);el('map-openpr').addEventListener('change',renderPoPrWarning); }
+  function renderMappings(){ const grid=el('mapGrid'); grid.innerHTML=''; const addSelect=(key,label,emptyLabel)=>{const wrap=document.createElement('div');wrap.className='field';const options=[`<option value="">${emptyLabel}</option>`,...workbook.SheetNames.map(n=>`<option value="${esc(n)}" ${n===defaultSheet(key)?'selected':''}>${esc(n)}</option>`)];wrap.innerHTML=`<label>${label}</label><select id="map-${key}">${options.join('')}</select>`;grid.appendChild(wrap)};required.forEach(([key,label])=>addSelect(key,label,'— select sheet —'));optionalSheets.forEach(([key,label])=>addSelect(key,`${label} (optional)`,'— none —'));renderBomColumns(defaultSheet('bom'));el('mapping').classList.add('show');renderPoPrWarning();el('map-openpo').addEventListener('change',renderPoPrWarning);el('map-openpr').addEventListener('change',renderPoPrWarning); }
   // Some ERP exports mislabel these two sheets: the tab picked as "Open PO" may
   // contain a column literally headed "Open PR" (or vice versa). The portal reads
   // whichever sheet tab is mapped to each field, so a mismatch here means the
@@ -117,18 +121,50 @@
       fgstock:['fgstock','fgstockqty','fgqty','finishedgoodstock','availablefgstock','quantity','qty','stock'],
       stock:['stockqty','stockquantity','onhandqty','onhand','availableqty','availablestock','stock','quantity','qty'],
       po:['openpoqty','openpo','poqty','purchaseorderqty','pobalanceqty','pobalance','pendingpoqty','pendingqty','balanceqty','balancequantity','remainingqty','remainingquantity','openqty','orderqty','quantity','qty'],
-      pr:['openprqty','openpr','prqty','purchaserequestqty','prbalanceqty','prbalance','pendingprqty','pendingqty','balanceqty','balancequantity','remainingqty','remainingquantity','openqty','requestqty','quantity','qty']
+      pr:['openprqty','openpr','prqty','purchaserequestqty','prbalanceqty','prbalance','pendingprqty','pendingqty','balanceqty','balancequantity','remainingqty','remainingquantity','openqty','requestqty','quantity','qty'],
+      cons:['3monthcons','3monthconsumption','threemonthcons','3mcons','3mconsumption','consumption','avgconsumption','cons','quantity','qty']
     };
     let qty=findKey(sample,quantityFields[type]||quantityFields.stock);
     // Some ERP exports use custom quantity headings. For supply sheets, select
     // the best remaining numeric column rather than silently calculating zero.
-    if(!qty && ['fgstock','stock','po','pr'].includes(type)) qty=fallbackQuantityKey(data,[code,description]);
+    if(!qty && ['fgstock','stock','po','pr','cons'].includes(type)) qty=fallbackQuantityKey(data,[code,description]);
     // No header matched a known item-code wording at all — fall back to the leftmost
     // populated column instead of failing, so unusual/custom headers still work.
     if(!code) code=fallbackCodeKey(data,[description,qty]);
     return {code,description,qty};
   }
   function stockSchema(data,type){const base=schema(data,type);return base;}
+  // Alternative sheet: one row per (original item → alternative item). Unlike a VLOOKUP,
+  // which returns only the first match, every distinct alternative for an item is kept so
+  // the user can see how many alternatives one item code really has.
+  function altSchema(data){
+    const sample=data.find(r=>Object.values(r).some(v=>v!==''))||{}, keys=Object.keys(sample), pairs=keys.map(k=>[k,normalize(k)]);
+    const pick=(choices,avoid=[])=>{for(const c of choices){const hit=pairs.find(([,n])=>n===normalize(c));if(hit)return hit[0]}for(const c of choices){const hit=pairs.find(([,n])=>n.includes(normalize(c))&&!avoid.some(a=>n.includes(a)));if(hit)return hit[0]}return ''};
+    let alt=pick(['alternativeitemno','alternativeitemcode','alternativeitem','alternateitemno','alternateitemcode','alternateitem','alternativecode','alternatecode','alternative','alternate','alt','substituteitem','replacementitem']);
+    let orig=pick(['originalitemno','originalitemcode','originalitem','originalcode','original','mainitemno','mainitem','itemno','itemcode','item'],['alt','match','remark','desc']);
+    if(orig===alt) orig='';
+    const populated=keys.filter(k=>{const sampleRows=data.slice(0,50);return sampleRows.filter(r=>{const v=cell(r,k);return v!==''&&v!==null&&v!==undefined}).length>=Math.max(1,Math.ceil(sampleRows.length*0.5))});
+    if(!orig) orig=populated.find(k=>k!==alt)||'';
+    if(!alt) alt=populated.find(k=>k!==orig)||'';
+    const matchFactor=pick(['matchfactor','match','factor'],[]), remarks=pick(['itemremarks','remarks','remark','notes','note'],[]);
+    return {orig,alt,matchFactor:matchFactor===orig||matchFactor===alt?'':matchFactor,remarks:remarks===orig||remarks===alt?'':remarks};
+  }
+  function buildAlternatives(data){
+    const s=altSchema(data);
+    if(!s.orig||!s.alt) throw new Error('Alternative sheet: could not find the "Original Item No." and "Alternative Item No." columns.');
+    const map=new Map();
+    data.forEach(row=>{
+      const o=String(cell(row,s.orig)).trim(), a=String(cell(row,s.alt)).trim();
+      if(!o||!a||isTotalLabel(o)||isTotalLabel(a)) return;
+      const ok=itemKey(o), ak=itemKey(a);
+      if(ok===ak) return;
+      const entry=map.get(ok)||{original:o,alts:[]};
+      if(entry.alts.some(x=>x.key===ak)) return;
+      entry.alts.push({key:ak,code:a,matchFactor:cell(row,s.matchFactor),remarks:String(cell(row,s.remarks)).trim()});
+      map.set(ok,entry);
+    });
+    return map;
+  }
   function bomSchema(data){const sample=data.find(r=>Object.values(r).some(v=>v!==''))||{};const keys=Object.keys(sample), pairs=keys.map(k=>[k,normalize(k)]); const get=(choices,avoid=[])=>{for(const c of choices){const hit=pairs.find(([,n])=>n===normalize(c));if(hit)return hit[0]}for(const c of choices){const hit=pairs.find(([,n])=>n.includes(normalize(c))&&!avoid.some(a=>n.includes(normalize(a))));if(hit)return hit[0]}return ''}; let parent=get(['fg','parentitem','parentitemcode','parentitemno','parentitemnumber','parentcode','parentmaterial','fgitem','fgitemcode','fgitemno','fgitemnumber','fgcode','fgmaterial','assemblyitem','assemblyitemno','finishedgood','finishedgoodcode','headeritem','productcode']);let child=get(['childitem','childitemcode','childitemno','childitemnumber','childcode','componentitem','componentitemcode','componentitemno','componentitemnumber','componentcode','componentmaterial','rawmaterial','rawmaterialcode','materialcode','bomitem','itemcode','itemno','item'],['parent','fg','assembly','finished','header']);let qty=get(['quantity','bomqty','bomquantity','qtyper','qtyperassembly','quantityper','perquantity','componentqty','usageqty','usage','requiredqty','qty']);let description=get(['itemdescription','componentdescription','childdescription','materialdescription','description']); let parentDescription=get(['fgitemdescription','fgdescription','parentitemdescription','parentdescription','assemblydescription','headeritemdescription','finishedgooddescription']); if(description===parent||description===child) description=''; if(parentDescription===parent||parentDescription===child) parentDescription=''; if(parent===child) child=''; return {parent,child,qty,description,parentDescription,headers:keys};}
   function cell(row,key){return key ? row[key] : '';}
   function aggregate(data, s, label){ const out=new Map(); if(!s.code) throw new Error(`${label}: item-code column was not found. Use a heading such as Item Code, Item No. or Material Code.`); if(!s.qty) throw new Error(`${label}: quantity column was not found. Check for a heading such as FG Stock, Stock Qty, Open PO, Open PR, Balance Qty or Qty.`); data.forEach(row=>{const code=String(cell(row,s.code)).trim();if(isTotalLabel(code))return;const key=itemKey(code);if(!key)return;const previous=out.get(key)||{item:code,description:String(cell(row,s.description)).trim(),qty:0};previous.qty+=number(cell(row,s.qty));if(!previous.description)previous.description=String(cell(row,s.description)).trim();out.set(key,previous)});return out; }
@@ -176,15 +212,55 @@
     // This matches the calculation workbook: FG stock is first netted in PLAN.
     const requirements=new Map(); let unmatched=0;plan.forEach(p=>{if(!p.shortage)return;const components=bomByParent.get(itemKey(p.item));if(!components){unmatched++;return}components.forEach(c=>{const key=itemKey(c.item),r=requirements.get(key)||{item:c.item,description:c.description,required:0};r.required+=p.shortage*c.qty;if(!r.description)r.description=c.description;requirements.set(key,r)})});
     const mrp=[...requirements.values()].map(r=>{const key=itemKey(r.item),onHand=stock.get(key)?.qty||0,openPO=po.get(key)?.qty||0,openPR=pr.get(key)?.qty||0;return {item:r.item,description:r.description||stock.get(key)?.description||po.get(key)?.description||pr.get(key)?.description||'',required:r.required,stock:onHand,shortage:onHand-r.required,openPO,openPR,newPR:Math.max(r.required-onHand-openPO-openPR,0)}}).sort((a,b)=>a.item.localeCompare(b.item,undefined,{numeric:true}));
-    return {plan,mrp,unmatched,bomColumns:{parent:bS.parent,child:bS.child,qty:bS.qty}, sourceSheets:Object.fromEntries(required.map(([k,l])=>[l,selected(k)]))};
+    // Remarks / Alternative / 3 Month Cons. — looked up per MRP item code.
+    // Remarks stays blank (header only). Alternative keeps EVERY distinct alternative code:
+    // the cell shows the first one plus "(+N more)", the full list goes to the Alternatives view/sheet.
+    const altSheet=selected('alt'), consSheet=selected('cons');
+    const altData=altSheet?rows(altSheet):[], consData=consSheet?rows(consSheet):[];
+    const altMap=altData.length?buildAlternatives(altData):new Map();
+    const cons=consData.length?aggregate(consData,stockSchema(consData,'cons'),'3 Month Cons.'):null;
+    const alternatives=[]; let withAlt=0, withMultiple=0, multipleCodes=0;
+    mrp.forEach(r=>{
+      const key=itemKey(r.item), entry=altMap.get(key), count=entry?entry.alts.length:0;
+      r.remarks='';
+      r.altCount=count;
+      r.alternative=count?entry.alts[0].code+(count>1?` (+${count-1} more)`:''):'';
+      r.cons=cons?(cons.get(key)?.qty||0):'';
+      if(count){withAlt++;if(count>1){withMultiple++;multipleCodes+=count}entry.alts.forEach((a,i)=>alternatives.push({item:r.item,description:r.description,count,index:i,alternative:a.code,matchFactor:a.matchFactor,remarks:a.remarks}))}
+    });
+    const sourceEntries=[...required.map(([k,l])=>[l,selected(k)]),...optionalSheets.filter(([k])=>selected(k)).map(([k,l])=>[l,selected(k)])];
+    return {plan,mrp,unmatched,alternatives,altProvided:!!altData.length,altStats:{withAlt,withMultiple,multipleCodes},consProvided:!!cons,bomColumns:{parent:bS.parent,child:bS.child,qty:bS.qty}, sourceSheets:Object.fromEntries(sourceEntries)};
   }
-  function table(data,view){const columns=view==='plan'?[['Item No.','item'],['Description','description'],['Sum of Balance Qty','required'],['FG Stock','fgStock'],['Shortage','shortage']]:[['Item','item'],['Item Description','description'],['Sum of Req. QTY','required'],['Stock','stock'],['Shortage','shortage'],['Open PO','openPO'],['Open PR','openPR'],['New PR','newPR']];el('resultTable').innerHTML=`<thead><tr>${columns.map(([h,k])=>`<th class="${k==='description'?'':'num'}">${h}</th>`).join('')}</tr></thead><tbody>${data.map(r=>`<tr>${columns.map(([,k])=>{const isNum=typeof r[k]==='number';const negative=k==='shortage'&&r[k]<0;return `<td class="${isNum?'num ':''}${negative?'negative ':''}${isNum&&r[k]===0?'zero':''}">${isNum?fmt(r[k]):esc(r[k])}</td>`}).join('')}</tr>`).join('')}</tbody>`||'<tbody><tr><td>No rows to show.</td></tr></tbody>';}
+  function table(data,view){const columns=view==='plan'?[['Item No.','item'],['Description','description'],['Sum of Balance Qty','required'],['FG Stock','fgStock'],['Shortage','shortage']]:[['Item','item'],['Item Description','description'],['Sum of Req. QTY','required'],['Stock','stock'],['Shortage','shortage'],['Open PO','openPO'],['Open PR','openPR'],['New PR','newPR'],['Remarks','remarks'],['Alternative','alternative'],['3 Month Cons.','cons']];el('resultTable').innerHTML=`<thead><tr>${columns.map(([h,k])=>`<th class="${['description','remarks','alternative'].includes(k)?'':'num'}">${h}</th>`).join('')}</tr></thead><tbody>${data.map(r=>`<tr>${columns.map(([,k])=>{const isNum=typeof r[k]==='number';const negative=k==='shortage'&&r[k]<0;const multi=k==='alternative'&&r.altCount>1;return `<td class="${isNum?'num ':''}${negative?'negative ':''}${multi?'multi ':''}${isNum&&r[k]===0?'zero':''}">${isNum?fmt(r[k]):esc(r[k]??'')}</td>`}).join('')}</tr>`).join('')}</tbody>`||'<tbody><tr><td>No rows to show.</td></tr></tbody>';}
+  // Items with more than one alternative code are listed here, one alternative per row,
+  // instead of cramming them all into a single MRP cell.
+  function renderAltPanel(){
+    const multi=results.alternatives.filter(a=>a.count>1), s=results.altStats;
+    el('altSummary').textContent=`Alternatives found for ${s.withAlt} MRP item(s). ${s.withMultiple} item(s) have more than one alternative (${s.multipleCodes} alternative codes in total), listed below. The full one-per-row list is in the “Alternatives” sheet of the Excel download.`;
+    el('altTable').innerHTML=`<thead><tr><th>Item</th><th>Item Description</th><th class="num">No. of Alternatives</th><th>Alternative Item No.</th><th>Match Factor</th><th>Item Remarks</th></tr></thead><tbody>${multi.map(a=>`<tr class="${a.index===0?'grp':''}"><td>${a.index===0?esc(a.item):''}</td><td>${a.index===0?esc(a.description):''}</td><td class="num">${a.index===0?a.count:''}</td><td>${esc(a.alternative)}</td><td>${esc(a.matchFactor??'')}</td><td>${esc(a.remarks)}</td></tr>`).join('')}</tbody>`;
+  }
+  function setupAltUI(){
+    const btn=el('altBtn');
+    el('altPanel').classList.add('hidden');
+    if(!results.altProvided){btn.style.display='none';return}
+    btn.dataset.count=results.altStats.withMultiple;
+    btn.style.display='';btn.disabled=!results.altStats.withMultiple;
+    btn.textContent=results.altStats.withMultiple?`Show duplicate alternatives (${results.altStats.withMultiple})`:'No duplicate alternatives found';
+  }
+  function toggleAltPanel(){
+    const panel=el('altPanel'), btn=el('altBtn'), opening=panel.classList.contains('hidden');
+    if(opening) renderAltPanel();
+    panel.classList.toggle('hidden',!opening);
+    btn.textContent=opening?'Hide duplicate alternatives':`Show duplicate alternatives (${btn.dataset.count})`;
+  }
   function showResults(view='plan'){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===view));table(results[view],view);}
   function exportResults(){
     const planHeaders=['Item No.','Description','Sum of Balance Qty','FG Stock','Shortage'];
-    const mrpHeaders=['Item','Item Description','Sum of Req. QTY','Stock','Shortage','Open PO','Open PR','New PR'];
+    const mrpHeaders=['Item','Item Description','Sum of Req. QTY','Stock','Shortage','Open PO','Open PR','New PR','Remarks','Alternative','3 Month Cons.'];
     const planRows=results.plan.map(r=>[r.item,r.description,r.required,r.fgStock,r.shortage]);
-    const mrpRows=results.mrp.map(r=>[r.item,r.description,r.required,r.stock,r.shortage,r.openPO,r.openPR,r.newPR]);
+    const mrpRows=results.mrp.map(r=>[r.item,r.description,r.required,r.stock,r.shortage,r.openPO,r.openPR,r.newPR,null,r.alternative||null,r.cons===''?null:r.cons]);
+    const altHeaders=['Item','Item Description','No. of Alternatives','Alternative Item No.','Match Factor','Item Remarks'];
+    const altRows=results.alternatives.map(a=>[a.item,a.description,a.count,a.alternative,a.matchFactor===''?null:a.matchFactor,a.remarks||null]);
     const wb=XLSX.utils.book_new();
     // Retain the exact input SOD and BOM tabs in the downloadable file.
     // Their values are not recalculated or changed by the portal.
@@ -194,20 +270,25 @@
     const add=(name,headers,data,widths)=>{const ws=XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:data.length,c:headers.length-1}})};ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];headers.forEach((_,c)=>{const cell=ws[XLSX.utils.encode_cell({r:0,c})];cell.s=headerStyle});for(let r=1;r<=data.length;r++){for(let c=2;c<headers.length;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];if(cell){cell.z='#,##0.###';if(headers[c]==='Shortage'&&Number(cell.v)<0)cell.s={font:{color:{rgb:'C4333E'},bold:true},fill:{fgColor:{rgb:'FFF0F1'}}}}}}XLSX.utils.book_append_sheet(wb,ws,name)};
     add('PLAN',planHeaders,planRows,[16,54,20,15,15]);
     copyInputSheet(selected('bom'),'BOM');
-    add('MRP',mrpHeaders,mrpRows,[16,54,18,14,14,14,14,14]);
+    add('MRP',mrpHeaders,mrpRows,[16,54,18,14,14,14,14,14,16,28,16]);
+    if(altRows.length) add('Alternatives',altHeaders,altRows,[16,54,20,22,14,30]);
     const info=XLSX.utils.aoa_to_sheet([['MRP Automation Output'],['Generated',new Date().toLocaleString('en-IN')],['Sources'],...Object.entries(results.sourceSheets)]);info['!cols']=[{wch:24},{wch:38}];XLSX.utils.book_append_sheet(wb,info,'Summary');XLSX.writeFile(wb,`${filename}_MRP_Output.xlsx`)
   }
   function downloadTemplate(){
     if(!window.XLSX){alert('Excel library could not load. Check your internet connection and reload this page.');return}
     const wb=XLSX.utils.book_new();
     const headerStyle={fill:{fgColor:{rgb:'D9E1F2'}},font:{bold:true,color:{rgb:'000000'},sz:12},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'70AD47'}},bottom:{style:'thin',color:{rgb:'70AD47'}},left:{style:'thin',color:{rgb:'70AD47'}},right:{style:'thin',color:{rgb:'70AD47'}}}};
-    const makeSheet=(name,headers,example,widths)=>{const ws=XLSX.utils.aoa_to_sheet([headers,example]);ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:1,c:headers.length-1}})};ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];headers.forEach((_,c)=>ws[XLSX.utils.encode_cell({r:0,c})].s=headerStyle);XLSX.utils.book_append_sheet(wb,ws,name)};
+    const makeSheet=(name,headers,example,widths)=>{const body=Array.isArray(example[0])?example:[example];const ws=XLSX.utils.aoa_to_sheet([headers,...body]);ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:body.length,c:headers.length-1}})};ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];headers.forEach((_,c)=>ws[XLSX.utils.encode_cell({r:0,c})].s=headerStyle);XLSX.utils.book_append_sheet(wb,ws,name)};
     makeSheet('SOD',['Item No.','Description','Balance Qty'],[20403144,'LBRD XTD 20L 10S1PX2CH-262.6MM-TUN-90CRI',112],[16,58,18]);
     makeSheet('BOM',['FG','Item','Item Description','Quantity'],[20403144,10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',1],[16,16,58,14]);
     makeSheet('fg stock',['Item No.','Description','FG Stock'],[20403144,'LBRD XTD 20L 10S1PX2CH-262.6MM-TUN-90CRI',1],[16,58,14]);
     makeSheet('Stock',['Item','Item Description','Stock'],[10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',0],[16,58,14]);
     makeSheet('open po',['Item','Item Description','Open PO'],[10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',200],[16,58,14]);
     makeSheet('open pr',['Item','Item Description','Open PR'],[10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',300],[16,58,14]);
+    // Optional sheets. The Alternative example lists the SAME original item twice with different
+    // alternative codes, to show that every alternative is picked up (not just the first).
+    makeSheet('Alternative',['Original Item No.','Alternative Item No.','Match Factor','Item Remarks'],[[10101004,10101372,100,'First alternative'],[10101004,10101385,100,'Second alternative for the same item']],[20,22,14,38]);
+    makeSheet('3 Month Cons.',['Item','Item Description','3 Month Cons.'],[10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',387],[16,58,16]);
     XLSX.writeFile(wb,'MRP_Input_Template.xlsx');
   }
   async function loadFile(file){if(!file)return;setStatus('Reading workbook…');el('runBtn').disabled=true;el('dupCheck').style.display='none';el('dupTable').innerHTML='';el('summary').classList.remove('show');el('output').classList.remove('show');try{const data=await file.arrayBuffer();workbook=XLSX.read(data,{type:'array',cellDates:true});filename=file.name.replace(/\.[^.]+$/,'');el('fileTitle').textContent=file.name;el('fileHint').textContent=`${workbook.SheetNames.length} sheets found: ${workbook.SheetNames.join(', ')}`;el('fileBadge').innerHTML='<span class="source-badge">Workbook loaded securely in your browser</span>';renderMappings();el('map-bom').addEventListener('change',e=>renderBomColumns(e.target.value));setStatus('Source sheets detected. Confirm and create your output.');el('runBtn').disabled=false}catch(e){setStatus(`Could not read file: ${e.message}`,true)}}
@@ -222,8 +303,8 @@
       setStatus(`Stopped: ${duplicates.length} item code(s) mile FG Stock aur Stock dono sheets me. Neeche list check karein aur input file theek karke dobara upload karein.`,true);
       return;
     }
-    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');const poprNote=poPrLabelWarning();el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}${poprNote?` ${poprNote}`:''}`;el('downloadBtn').disabled=false;showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
-  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showResults(t.dataset.view)));el('downloadBtn').addEventListener('click',exportResults);
+    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');const poprNote=poPrLabelWarning();el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}${results.altProvided?` ${results.altStats.withAlt} MRP item(s) have an alternative (${results.altStats.withMultiple} with more than one).`:''}${poprNote?` ${poprNote}`:''}`;el('downloadBtn').disabled=false;setupAltUI();showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showResults(t.dataset.view)));el('downloadBtn').addEventListener('click',exportResults);el('altBtn').addEventListener('click',toggleAltPanel);
   const themeToggle=el('themeToggle'),themeIcon=el('themeIcon'),themeText=el('themeText');
   const setTheme=theme=>{document.body.classList.toggle('dark',theme==='dark');themeIcon.textContent=theme==='dark'?'☀':'☾';themeText.textContent=theme==='dark'?'Light mode':'Dark mode';localStorage.setItem('mrp-theme',theme)};
   setTheme(localStorage.getItem('mrp-theme')||'light');
