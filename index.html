@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>MRP Flow | Planning Automation</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     :root{--navy:#143554;--blue:#1677d2;--aqua:#20c4bb;--mist:#f6f9fd;--line:#d9e5f0;--ink:#14243a;--muted:#66788c;--warn:#ef5d64}
     *{box-sizing:border-box} body{margin:0;background:var(--mist);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -32,10 +33,10 @@
       <div class="card"><h2>1. Upload your MRP input</h2><p class="sub">Your original workbook stays unchanged. Excel files only (.xlsx / .xls).</p><label class="drop" id="dropZone" for="fileInput"><div><div class="file-icon">⇧</div><strong id="fileTitle">Choose or drop an Excel workbook</strong><span id="fileHint">Workbook must contain the six source sheets. Alternative and 3 Month Cons. sheets are optional.</span></div></label><input class="file-input" id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"><div id="fileBadge"></div><div class="template-row"><span>Need a format to start with?</span><button class="secondary template-btn" id="templateBtn" type="button">Download sample input template</button></div></div>
       <aside class="card"><h2>What this automation calculates</h2><p class="sub">Built for the output layout you shared.</p><div class="rules"><div class="rule"><i class="tick">✓</i><div><b>Plan</b><br>Groups SOD by item, sums Balance Qty, adds FG Stock and sets shortage to <em>max(required − FG stock, 0)</em>.</div></div><div class="rule"><i class="tick">✓</i><div><b>MRP</b><br>Explodes Plan shortage through the BOM, then adds Stock, Open PO and Open PR.</div></div><div class="rule"><i class="tick">✓</i><div><b>Remarks · Alternative · 3 Month Cons.</b><br>Remarks is a blank column for your notes. Alternative and 3 Month Cons. are looked up by item code from optional input sheets; every alternative of an item is kept and duplicates are listed via a button.</div></div><div class="rule"><i class="tick">✓</i><div><b>Stable supply values</b><br>Stock, Open PO and Open PR are always read from their own input sheets; changing SOD/BOM only changes demand.</div></div></div></aside>
     </section>
-    <section class="card mapping" id="mapping"><h2>2. Confirm source sheets</h2><p class="sub">Detected automatically. Change a selection only if your workbook uses a different sheet name.</p><div class="map-grid" id="mapGrid"></div><div id="bomColumnMap"></div><div class="note hidden" id="poprWarning"></div><div class="actions"><button class="primary" id="runBtn">Create Plan &amp; MRP</button><span class="status" id="status">Ready to calculate.</span></div></section>
+    <section class="card mapping" id="mapping"><h2>2. Confirm source sheets</h2><p class="sub">Detected automatically. Change a selection only if your workbook uses a different sheet name.</p><div class="map-grid" id="mapGrid"></div><div id="bomColumnMap"></div><div class="field" style="margin-top:18px;max-width:640px"><label>Requirement basis for MRP</label><select id="req-basis"><option value="stored">Use the BOM's PLAN / Req. QTY columns when present (same as your Excel pivot)</option><option value="live">Recalculate from the current SOD − FG Stock</option></select></div><div class="note hidden" id="poprWarning"></div><div class="actions"><button class="primary" id="runBtn">Create Plan &amp; MRP</button><span class="status" id="status">Ready to calculate.</span></div></section>
     <section class="card" id="dupCheck" style="display:none;border-color:#f3c1c6"><h2 style="color:#c4333e">⚠ Duplicate item codes found (FG Stock ⇔ Stock)</h2><p class="sub">The same Item Code was found in both the <b>FG Stock</b> sheet and <b>Stock</b> sheet. The<b>FG Stock</b> sheet should contain only FG codes, while the <b>Stock</b> sheet should contain only RM / PF / SFG codes..This overlap may result in duplicate or incorrect values in the Plan and MRP calculations —Therefore, the calculation has been stopped. Please correct the item code in the appropriate sheet in the source file and upload the file again.</p><div class="table-wrap" style="max-height:340px"><table id="dupTable"></table></div></section>
     <section class="summary" id="summary"><div class="stat"><span>Plan items</span><b id="planCount">0</b></div><div class="stat"><span>FG shortage</span><b id="fgShortage">0</b></div><div class="stat"><span>MRP items</span><b id="mrpCount">0</b></div><div class="stat accent"><span>New PR required</span><b id="newPr">0</b></div></section>
-    <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="altBtn" type="button" style="display:none"></button><button class="secondary" id="downloadBtn"type="button">Download Excel output</button></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="hidden" id="altPanel" style="margin-top:16px"><p class="sub" id="altSummary" style="margin:0 0 10px"></p><div class="table-wrap" style="max-height:340px"><table id="altTable"></table></div></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short. New PR = max(Required − Stock − Open PO − Open PR, 0). <b>Remarks</b> is left blank for your own notes. <b>Alternative</b> shows the first alternative code from the Alternative sheet (with “+N more” when an item has several), and <b>3 Month Cons.</b> is looked up by item code (0 if not found).</div></section>
+    <section class="card output" id="output"><div class="actions" style="margin-top:0"><div><h2 style="margin-bottom:5px">3. Review &amp; download</h2><p class="sub" id="outputSub" style="margin:0"></p></div><button class="secondary" id="altBtn" type="button" style="display:none"></button><button class="secondary" id="downloadBtn"type="button">Download Excel output</button></div><div class="note hidden" id="basisNote" style="margin-top:16px"></div><div class="tabs" style="margin-top:20px"><button class="tab active" data-view="plan">PLAN</button><button class="tab" data-view="mrp">MRP</button></div><div class="table-wrap"><table id="resultTable"></table></div><div class="hidden" id="altPanel" style="margin-top:16px"><p class="sub" id="altSummary" style="margin:0 0 10px"></p><div class="table-wrap" style="max-height:340px"><table id="altTable"></table></div></div><div class="note">MRP shortage is shown as <b>Stock − Required Qty</b>, matching your sample. A negative number means material is short (highlighted in the Excel file). New PR = max(Required − Stock − Open PO − Open PR, 0). <b>Remarks</b> is left blank for your own notes. <b>Alternative</b> shows the first alternative code from the Alternative sheet (with “+N more” when an item has several), and <b>3 Month Cons.</b> is looked up by item code (0 if not found).</div></section>
   </main>
 <script>
 (() => {
@@ -203,14 +204,42 @@
     // description is still shown instead of a blank cell.
     const fgDescByParent=new Map();if(bS.parentDescription)bData.forEach(row=>{const parent=String(cell(row,bS.parent)).trim();const pk=itemKey(parent);if(!pk||fgDescByParent.has(pk))return;const d=String(cell(row,bS.parentDescription)).trim();if(d)fgDescByParent.set(pk,d)});
     const plan=[...sod.values()].map(r=>{const available=fg.get(itemKey(r.item))?.qty||0;return {item:r.item,description:r.description||fg.get(itemKey(r.item))?.description||fgDescByParent.get(itemKey(r.item))||'',required:r.qty,fgStock:available,shortage:Math.max(r.qty-available,0)}}).sort((a,b)=>a.item.localeCompare(b.item,undefined,{numeric:true}));
-    // Some ERP BOM exports include a "Depth 1" row per FG where Item == FG itself
-    // (the finished good referencing its own code, qty 1). That is BOM metadata,
-    // not a real component — including it would make the FG's own shortage
-    // reappear as a fake MRP requirement with no stock/PO/PR coverage.
-    const bomByParent=new Map();bData.forEach(row=>{const parent=String(cell(row,bS.parent)).trim(),child=String(cell(row,bS.child)).trim(),qty=number(cell(row,bS.qty));if(!parent||!child||!qty)return;if(isTotalLabel(parent)||isTotalLabel(child))return;if(itemKey(parent)===itemKey(child))return;const entry={item:child,description:String(cell(row,bS.description)).trim(),qty};const parentKey=itemKey(parent);if(!bomByParent.has(parentKey))bomByParent.set(parentKey,[]);bomByParent.get(parentKey).push(entry)});
-    // MRP is a pivot of the BOM: net Plan shortage × BOM quantity for each component.
-    // This matches the calculation workbook: FG stock is first netted in PLAN.
-    const requirements=new Map(); let unmatched=0;plan.forEach(p=>{if(!p.shortage)return;const components=bomByParent.get(itemKey(p.item));if(!components){unmatched++;return}components.forEach(c=>{const key=itemKey(c.item),r=requirements.get(key)||{item:c.item,description:c.description,required:0};r.required+=p.shortage*c.qty;if(!r.description)r.description=c.description;requirements.set(key,r)})});
+    // Requirement basis — the same workflow as in Excel: BOM "PLAN" is the FG's shortage, BOM "Req. QTY" is
+    // PLAN × Quantity, and MRP is the item-wise sum of that Req. QTY. If the uploaded BOM already carries those
+    // columns they are used exactly as stored ("stored"); if it does not (or the user picks "recalculate"), they
+    // are built from the current Plan, PLAN = FG shortage and Req. QTY = PLAN × Quantity ("calculated").
+    const shortageByFG=new Map(plan.map(p=>[itemKey(p.item),p.shortage]));
+    const bomKeys=Object.keys(bData.find(r=>Object.values(r).some(v=>v!==''))||{});
+    const findBomKey=names=>bomKeys.find(k=>names.includes(normalize(k)))||'';
+    let planKey=findBomKey(['plan','planqty']), reqKey=findBomKey(['reqqty','requiredqty','reqquantity']);
+    if(planKey===bS.qty) planKey=''; if(reqKey===bS.qty) reqKey='';
+    const storedNum=v=>(v===''||v===null||v===undefined||(typeof v!=='number'&&!/\d/.test(String(v))))?null:number(v);
+    const hadStored=bData.some(r=>(reqKey&&storedNum(r[reqKey])!==null)||(planKey&&storedNum(r[planKey])!==null));
+    const basis=(el('req-basis')?.value||'stored')==='stored'&&hadStored?'stored':'calculated';
+    const requirements=new Map(), bomParents=new Set(), storedPlan=new Map();
+    bData.forEach(row=>{
+      const parent=String(cell(row,bS.parent)).trim(),child=String(cell(row,bS.child)).trim(),qty=number(cell(row,bS.qty));
+      if(!parent||!child||!qty)return;
+      if(isTotalLabel(parent)||isTotalLabel(child))return;
+      // Some ERP BOM exports include a "Depth 1" row per FG where Item == FG itself (the finished good
+      // referencing its own code, qty 1). That is BOM metadata, not a real component.
+      if(itemKey(parent)===itemKey(child))return;
+      const pk=itemKey(parent), live=shortageByFG.get(pk)||0;
+      bomParents.add(pk);
+      let req=live*qty;
+      if(basis==='stored'){
+        const rs=reqKey?storedNum(row[reqKey]):null, ps=planKey?storedNum(row[planKey]):null;
+        req=rs!==null?rs:(ps!==null?ps:live)*qty;
+        const shown=ps!==null?ps:(rs!==null?rs/qty:null);
+        if(shown!==null&&!storedPlan.has(pk))storedPlan.set(pk,{fg:parent,stored:shown});
+      }
+      if(!req)return;
+      const key=itemKey(child),r=requirements.get(key)||{item:child,description:String(cell(row,bS.description)).trim(),required:0};
+      r.required+=req;if(!r.description)r.description=String(cell(row,bS.description)).trim();requirements.set(key,r);
+    });
+    const unmatched=plan.filter(p=>p.shortage&&!bomParents.has(itemKey(p.item))).length;
+    const planDiffs=[];storedPlan.forEach((v,pk)=>{const live=shortageByFG.get(pk)||0;if(Math.abs(v.stored-live)>1e-9)planDiffs.push({fg:v.fg,stored:v.stored,live})});
+    planDiffs.sort((a,b)=>Math.abs(b.stored-b.live)-Math.abs(a.stored-a.live));
     const mrp=[...requirements.values()].map(r=>{const key=itemKey(r.item),onHand=stock.get(key)?.qty||0,openPO=po.get(key)?.qty||0,openPR=pr.get(key)?.qty||0;return {item:r.item,description:r.description||stock.get(key)?.description||po.get(key)?.description||pr.get(key)?.description||'',required:r.required,stock:onHand,shortage:onHand-r.required,openPO,openPR,newPR:Math.max(r.required-onHand-openPO-openPR,0)}}).sort((a,b)=>a.item.localeCompare(b.item,undefined,{numeric:true}));
     // Remarks / Alternative / 3 Month Cons. — looked up per MRP item code.
     // Remarks stays blank (header only). Alternative keeps EVERY distinct alternative code:
@@ -229,11 +258,13 @@
       if(count){withAlt++;if(count>1){withMultiple++;multipleCodes+=count}entry.alts.forEach((a,i)=>alternatives.push({item:r.item,description:r.description,count,index:i,alternative:a.code,matchFactor:a.matchFactor,remarks:a.remarks}))}
     });
     const sourceEntries=[...required.map(([k,l])=>[l,selected(k)]),...optionalSheets.filter(([k])=>selected(k)).map(([k,l])=>[l,selected(k)])];
-    return {plan,mrp,unmatched,alternatives,altProvided:!!altData.length,altStats:{withAlt,withMultiple,multipleCodes},consProvided:!!cons,bomColumns:{parent:bS.parent,child:bS.child,qty:bS.qty}, sourceSheets:Object.fromEntries(sourceEntries)};
+    return {plan,mrp,unmatched,basis,hadStored,fgCompared:storedPlan.size,planDiffCount:planDiffs.length,planDiffs:planDiffs.slice(0,20),alternatives,altProvided:!!altData.length,altStats:{withAlt,withMultiple,multipleCodes},consProvided:!!cons,bomColumns:{parent:bS.parent,child:bS.child,qty:bS.qty}, sourceSheets:Object.fromEntries(sourceEntries)};
   }
   function table(data,view){const columns=view==='plan'?[['Item No.','item'],['Description','description'],['Sum of Balance Qty','required'],['FG Stock','fgStock'],['Shortage','shortage']]:[['Item','item'],['Item Description','description'],['Sum of Req. QTY','required'],['Stock','stock'],['Shortage','shortage'],['Open PO','openPO'],['Open PR','openPR'],['New PR','newPR'],['Remarks','remarks'],['Alternative','alternative'],['3 Month Cons.','cons']];el('resultTable').innerHTML=`<thead><tr>${columns.map(([h,k])=>`<th class="${['description','remarks','alternative'].includes(k)?'':'num'}">${h}</th>`).join('')}</tr></thead><tbody>${data.map(r=>`<tr>${columns.map(([,k])=>{const isNum=typeof r[k]==='number';const negative=k==='shortage'&&r[k]<0;const multi=k==='alternative'&&r.altCount>1;return `<td class="${isNum?'num ':''}${negative?'negative ':''}${multi?'multi ':''}${isNum&&r[k]===0?'zero':''}">${isNum?fmt(r[k]):esc(r[k]??'')}</td>`}).join('')}</tr>`).join('')}</tbody>`||'<tbody><tr><td>No rows to show.</td></tr></tbody>';}
   // Items with more than one alternative code are listed here, one alternative per row,
   // instead of cramming them all into a single MRP cell.
+  // Instaed of a pivot, this is a flat list of all altenatives, so the user can see exactly how many alternatives each item has.
+  
   function renderAltPanel(){
     const multi=results.alternatives.filter(a=>a.count>1), s=results.altStats;
     el('altSummary').textContent=`Alternatives found for ${s.withAlt} MRP item(s). ${s.withMultiple} item(s) have more than one alternative (${s.multipleCodes} alternative codes in total), listed below. The full one-per-row list is in the “Alternatives” sheet of the Excel download.`;
@@ -253,31 +284,155 @@
     panel.classList.toggle('hidden',!opening);
     btn.textContent=opening?'Hide duplicate alternatives':`Show duplicate alternatives (${btn.dataset.count})`;
   }
+  function renderBasisNote(){
+    const box=el('basisNote'); let msg='';
+    if(results.basis==='stored'){
+      msg='MRP uses the PLAN / Req. QTY columns exactly as stored in your BOM sheet (same as pivoting the BOM in Excel).';
+      if(results.planDiffCount){
+        const ex=results.planDiffs.slice(0,3).map(d=>`${d.fg}: BOM ${fmt(d.stored)} vs current SOD − FG Stock ${fmt(d.live)}`).join('; ');
+        msg+=` ⚠ For ${fmt(results.planDiffCount)} of ${fmt(results.fgCompared)} FG(s) the BOM PLAN differs from the current SOD − FG Stock (e.g. ${ex}). The PLAN sheet shows the current values. If the BOM PLAN is out of date, refresh it, or choose “Recalculate from the current SOD − FG Stock” in step 2.`;
+      }
+    }else if(results.hadStored){
+      msg='MRP was recalculated from the current SOD − FG Stock. The PLAN / Req. QTY columns stored in your BOM were not used.';
+    }else{
+      msg='Your BOM has no PLAN / Req. QTY values, so they were calculated: PLAN = the FG’s shortage from the PLAN sheet, Req. QTY = PLAN × Quantity.';
+    }
+    box.textContent=msg;box.classList.toggle('hidden',!msg);
+  }
   function showResults(view='plan'){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===view));table(results[view],view);}
-  function exportResults(){
+  // Same workflow as the manual Excel one: BOM "PLAN" = the FG's shortage from the Plan (a lookup by FG),
+  // BOM "Req. QTY" = PLAN × Quantity, and MRP = the item-wise sum of that Req. QTY column. The exported
+  // BOM gets both columns recalculated from the current Plan (or added at the end if the input BOM has none),
+  // so the BOM, PLAN and MRP tabs agree. An FG missing from the Plan gets PLAN 0.
+  function bomWithPlanColumns(source,cols,shortageByFG,basis){
+    if(!source||!source['!ref']) return source;
+    const range=XLSX.utils.decode_range(source['!ref']), hdr=range.s.r;
+    const headerText=c=>{const cl=source[XLSX.utils.encode_cell({r:hdr,c})];return cl?String(cl.w??cl.v??'').trim():''};
+    const findCol=test=>{for(let c=range.s.c;c<=range.e.c;c++){if(test(headerText(c)))return c}return -1};
+    const parentCol=findCol(h=>h===String(cols.parent).trim()), qtyCol=findCol(h=>h===String(cols.qty).trim()), childCol=findCol(h=>h===String(cols.child).trim());
+    let planCol=findCol(h=>['plan','planqty'].includes(normalize(h))), reqCol=findCol(h=>['reqqty','requiredqty','reqquantity'].includes(normalize(h)));
+    if(parentCol<0||qtyCol<0||qtyCol===planCol||qtyCol===reqCol) return source;
+    const ws=Object.assign({},source);
+    let lastCol=range.e.c;
+    if(planCol<0){planCol=++lastCol;ws[XLSX.utils.encode_cell({r:hdr,c:planCol})]={t:'s',v:'PLAN'}}
+    if(reqCol<0){reqCol=++lastCol;ws[XLSX.utils.encode_cell({r:hdr,c:reqCol})]={t:'s',v:'Req. QTY'}}
+    for(let r=hdr+1;r<=range.e.r;r++){
+      const fgCell=source[XLSX.utils.encode_cell({r,c:parentCol})], fg=fgCell?String(fgCell.v??'').trim():'';
+      if(!fg||isTotalLabel(fg)) continue;
+      const qtyCell=source[XLSX.utils.encode_cell({r,c:qtyCol})];
+      // Self-row (Item == FG, "Depth 1") is BOM metadata, not a component: MRP ignores it, so PLAN/Req. QTY stay 0 here too.
+      const childCell=childCol>=0?source[XLSX.utils.encode_cell({r,c:childCol})]:null, isSelfRow=childCell&&itemKey(String(childCell.v??'').trim())===itemKey(fg);
+      const live=isSelfRow?0:(shortageByFG.get(itemKey(fg))||0), qty=number(qtyCell?qtyCell.v:0);
+      const planAddr=XLSX.utils.encode_cell({r,c:planCol}), reqAddr=XLSX.utils.encode_cell({r,c:reqCol});
+      if(basis==='stored'){
+        // Values already in the BOM are kept exactly as they are; only blank cells are filled in.
+        const stored=a=>{const c=source[a];return c&&c.v!==''&&c.v!==null&&c.v!==undefined&&typeof c.v!=='boolean'&&!isNaN(Number(c.v))?Number(c.v):null};
+        const p=stored(planAddr), q=stored(reqAddr);
+        if(p===null)ws[planAddr]={t:'n',v:q!==null&&qty?q/qty:live};
+        if(q===null)ws[reqAddr]={t:'n',v:(p!==null?p:live)*qty};
+      }else{
+        ws[planAddr]={t:'n',v:live};
+        ws[reqAddr]={t:'n',v:live*qty};
+      }
+    }
+    if(lastCol>range.e.c) ws['!ref']=XLSX.utils.encode_range({s:range.s,e:{r:range.e.r,c:lastCol}});
+    return ws;
+  }
+  // ---- Styled Excel export -------------------------------------------------------------------
+  const HEADER_STYLE={fill:{fgColor:{rgb:'D9E1F2'}},font:{bold:true,color:{rgb:'000000'}},alignment:{horizontal:'left',vertical:'center'},border:{top:{style:'thin',color:{rgb:'B4C6E7'}},bottom:{style:'thin',color:{rgb:'B4C6E7'}},left:{style:'thin',color:{rgb:'B4C6E7'}},right:{style:'thin',color:{rgb:'B4C6E7'}}}};
+  const NEGATIVE_STYLE={font:{color:{rgb:'9C0006'}},fill:{fgColor:{rgb:'FFC7CE'}}};
+  // "#,##0.###" prints a whole number as "91." (a dangling decimal point). Whole numbers use "0";
+  // fractional ones use "0.00#" (2–3 decimals), so a trailing point can never appear.
+  const cellNumFmt=v=>Number.isInteger(v)?'0':'0.00#';
+  const unescapeXml=s=>String(s??'').replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+  // The SheetJS writer cannot create conditional formatting, so it is added to the saved file: one
+  // "cell value < 0" rule (Excel's "Light Red Fill with Dark Red Text") on each requested range.
+  // Being a real conditional format, the highlight follows the value if a cell is edited later.
+  async function addNegativeHighlight(bytes,targets){
+    const zip=await JSZip.loadAsync(bytes);
+    const read=async p=>{const f=zip.file(p);if(!f)throw new Error(`${p} is missing`);return f.async('string')};
+    let styles=await read('xl/styles.xml');
+    const dxf='<dxf><font><color rgb="FF9C0006"/></font><fill><patternFill><bgColor rgb="FFFFC7CE"/></patternFill></fill></dxf>';
+    const emptyDxfs=styles.match(/<dxfs\s+count="(\d+)"\s*\/>/), openDxfs=styles.match(/<dxfs\s+count="(\d+)"\s*>/);
+    let dxfId;
+    if(emptyDxfs){dxfId=Number(emptyDxfs[1]);styles=styles.replace(emptyDxfs[0],`<dxfs count="${dxfId+1}">${dxf}</dxfs>`)}
+    else if(openDxfs){dxfId=Number(openDxfs[1]);styles=styles.replace(openDxfs[0],`<dxfs count="${dxfId+1}">`).replace('</dxfs>',`${dxf}</dxfs>`)}
+    else{dxfId=0;const at=styles.search(/<tableStyles|<colors|<extLst|<\/styleSheet>/);styles=styles.slice(0,at)+`<dxfs count="1">${dxf}</dxfs>`+styles.slice(at)}
+    zip.file('xl/styles.xml',styles);
+    const workbookXml=await read('xl/workbook.xml'), relsXml=await read('xl/_rels/workbook.xml.rels');
+    const attr=(tag,name)=>(tag.match(new RegExp(`\\s${name}="([^"]*)"`))||[])[1];
+    for(const t of targets){
+      const sheetTag=(workbookXml.match(/<sheet\b[^>]*>/g)||[]).find(s=>unescapeXml(attr(s,'name'))===t.sheet);
+      const relTag=sheetTag&&(relsXml.match(/<Relationship\b[^>]*>/g)||[]).find(s=>attr(s,'Id')===attr(sheetTag,'r:id'));
+      const target=relTag&&attr(relTag,'Target');
+      if(!target) throw new Error(`sheet ${t.sheet} was not found in the file`);
+      const path=target.startsWith('/')?target.slice(1):`xl/${target}`;
+      const xml=await read(path), from=xml.indexOf('</sheetData>');
+      const at=Math.min(...['<dataValidations','<hyperlinks','<printOptions','<pageMargins','<pageSetup','<headerFooter','<ignoredErrors','<drawing','</worksheet>'].map(k=>xml.indexOf(k,from)).filter(i=>i>=0));
+      const rule=`<conditionalFormatting sqref="${t.ref}"><cfRule type="cellIs" dxfId="${dxfId}" priority="1" operator="lessThan"><formula>0</formula></cfRule></conditionalFormatting>`;
+      zip.file(path,xml.slice(0,at)+rule+xml.slice(at));
+    }
+    return zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
+  }
+  function downloadBytes(bytes,fileName){
+    const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url;a.download=fileName;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+  }
+  function buildOutput(useConditional){
     const planHeaders=['Item No.','Description','Sum of Balance Qty','FG Stock','Shortage'];
     const mrpHeaders=['Item','Item Description','Sum of Req. QTY','Stock','Shortage','Open PO','Open PR','New PR','Remarks','Alternative','3 Month Cons.'];
     const planRows=results.plan.map(r=>[r.item,r.description,r.required,r.fgStock,r.shortage]);
     const mrpRows=results.mrp.map(r=>[r.item,r.description,r.required,r.stock,r.shortage,r.openPO,r.openPR,r.newPR,null,r.alternative||null,r.cons===''?null:r.cons]);
     const altHeaders=['Item','Item Description','No. of Alternatives','Alternative Item No.','Match Factor','Item Remarks'];
     const altRows=results.alternatives.map(a=>[a.item,a.description,a.count,a.alternative,a.matchFactor===''?null:a.matchFactor,a.remarks||null]);
-    const wb=XLSX.utils.book_new();
-    // Retain the exact input SOD and BOM tabs in the downloadable file.
-    // Their values are not recalculated or changed by the portal.
+    const wb=XLSX.utils.book_new(), highlight=[];
+    // The SOD tab is retained exactly as uploaded. The BOM tab keeps every original column but its
+    // PLAN and Req. QTY columns are recalculated (see bomWithPlanColumns).
     const copyInputSheet=(sourceName,outputName)=>{const source=workbook?.Sheets?.[sourceName];if(source) XLSX.utils.book_append_sheet(wb,source,outputName,true)};
+    const shortageByFG=new Map(results.plan.map(p=>[itemKey(p.item),p.shortage]));
     copyInputSheet(selected('sod'),'SOD');
-    const headerStyle={fill:{fgColor:{rgb:'D9E1F2'}},font:{bold:true,color:{rgb:'000000'},sz:12},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'70AD47'}},bottom:{style:'thin',color:{rgb:'70AD47'}},left:{style:'thin',color:{rgb:'70AD47'}},right:{style:'thin',color:{rgb:'70AD47'}}}};
-    const add=(name,headers,data,widths)=>{const ws=XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:data.length,c:headers.length-1}})};ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];headers.forEach((_,c)=>{const cell=ws[XLSX.utils.encode_cell({r:0,c})];cell.s=headerStyle});for(let r=1;r<=data.length;r++){for(let c=2;c<headers.length;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];if(cell){cell.z='#,##0.###';if(headers[c]==='Shortage'&&Number(cell.v)<0)cell.s={font:{color:{rgb:'C4333E'},bold:true},fill:{fgColor:{rgb:'FFF0F1'}}}}}}XLSX.utils.book_append_sheet(wb,ws,name)};
+    const add=(name,headers,data,widths)=>{
+      const ws=XLSX.utils.aoa_to_sheet([headers,...data]);
+      ws['!cols']=widths.map(w=>({wch:w}));
+      ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:data.length,c:headers.length-1}})};
+      ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];
+      headers.forEach((_,c)=>{ws[XLSX.utils.encode_cell({r:0,c})].s=HEADER_STYLE});
+      const shortageCol=headers.indexOf('Shortage');
+      for(let r=1;r<=data.length;r++){
+        const first=ws[XLSX.utils.encode_cell({r,c:0})];if(first)first.s={font:{bold:true}};
+        for(let c=2;c<headers.length;c++){
+          const cell=ws[XLSX.utils.encode_cell({r,c})];
+          if(cell&&cell.t==='n'){cell.z=cellNumFmt(cell.v);if(!useConditional&&c===shortageCol&&cell.v<0)cell.s=NEGATIVE_STYLE}
+        }
+      }
+      if(useConditional&&name==='MRP'&&shortageCol>=0&&data.length){const col=XLSX.utils.encode_col(shortageCol);highlight.push({sheet:name,ref:`${col}2:${col}${data.length+1}`})}
+      XLSX.utils.book_append_sheet(wb,ws,name);
+    };
     add('PLAN',planHeaders,planRows,[16,54,20,15,15]);
-    copyInputSheet(selected('bom'),'BOM');
+    const bomSource=workbook?.Sheets?.[selected('bom')];if(bomSource) XLSX.utils.book_append_sheet(wb,bomWithPlanColumns(bomSource,results.bomColumns,shortageByFG,results.basis),'BOM',true);
     add('MRP',mrpHeaders,mrpRows,[16,54,18,14,14,14,14,14,16,28,16]);
     if(altRows.length) add('Alternatives',altHeaders,altRows,[16,54,20,22,14,30]);
-    const info=XLSX.utils.aoa_to_sheet([['MRP Automation Output'],['Generated',new Date().toLocaleString('en-IN')],['Sources'],...Object.entries(results.sourceSheets)]);info['!cols']=[{wch:24},{wch:38}];XLSX.utils.book_append_sheet(wb,info,'Summary');XLSX.writeFile(wb,`${filename}_MRP_Output.xlsx`)
+    const info=XLSX.utils.aoa_to_sheet([['MRP Automation Output'],['Generated',new Date().toLocaleString('en-IN')],['BOM sheet',results.basis==='stored'?'PLAN and Req. QTY used exactly as stored in the uploaded BOM (blank cells filled in)':'PLAN = Plan shortage of the FG; Req. QTY = PLAN × Quantity (calculated)'],...(results.basis==='stored'&&results.planDiffCount?[['Note',`BOM PLAN differs from the current SOD − FG Stock for ${results.planDiffCount} of ${results.fgCompared} FG(s)`]]:[]),['Sources'],...Object.entries(results.sourceSheets)]);info['!cols']=[{wch:24},{wch:38}];XLSX.utils.book_append_sheet(wb,info,'Summary');
+    return {wb,highlight};
+  }
+  async function exportResults(){
+    try{
+      setStatus('Preparing the Excel file…');
+      const write=b=>XLSX.write(b.wb,{bookType:'xlsx',type:'array'});
+      let built=buildOutput(!!window.JSZip), bytes=write(built);
+      if(window.JSZip){
+        try{bytes=await addNegativeHighlight(bytes,built.highlight)}
+        catch(e){built=buildOutput(false);bytes=write(built)} // could not add the rule: highlight the negative cells directly instead
+      }
+      downloadBytes(bytes,`${filename}_MRP_Output.xlsx`);
+      setStatus('Excel file downloaded.');
+    }catch(e){setStatus(`Could not create the Excel file: ${e.message}`,true)}
   }
   function downloadTemplate(){
     if(!window.XLSX){alert('Excel library could not load. Check your internet connection and reload this page.');return}
     const wb=XLSX.utils.book_new();
-    const headerStyle={fill:{fgColor:{rgb:'D9E1F2'}},font:{bold:true,color:{rgb:'000000'},sz:12},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'70AD47'}},bottom:{style:'thin',color:{rgb:'70AD47'}},left:{style:'thin',color:{rgb:'70AD47'}},right:{style:'thin',color:{rgb:'70AD47'}}}};
+    const headerStyle=HEADER_STYLE;
     const makeSheet=(name,headers,example,widths)=>{const body=Array.isArray(example[0])?example:[example];const ws=XLSX.utils.aoa_to_sheet([headers,...body]);ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:body.length,c:headers.length-1}})};ws['!freeze']={xSplit:0,ySplit:1};ws['!rows']=[{hpt:24}];headers.forEach((_,c)=>ws[XLSX.utils.encode_cell({r:0,c})].s=headerStyle);XLSX.utils.book_append_sheet(wb,ws,name)};
     makeSheet('SOD',['Item No.','Description','Balance Qty'],[20403144,'LBRD XTD 20L 10S1PX2CH-262.6MM-TUN-90CRI',112],[16,58,18]);
     makeSheet('BOM',['FG','Item','Item Description','Quantity'],[20403144,10101004,'LPCB-JI-MON-2835-12S12P-144L-400MM-R2',1],[16,16,58,14]);
@@ -303,7 +458,7 @@
       setStatus(`Stopped: ${duplicates.length} item code(s) mile FG Stock aur Stock dono sheets me. Neeche list check karein aur input file theek karke dobara upload karein.`,true);
       return;
     }
-    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');const poprNote=poPrLabelWarning();el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}${results.altProvided?` ${results.altStats.withAlt} MRP item(s) have an alternative (${results.altStats.withMultiple} with more than one).`:''}${poprNote?` ${poprNote}`:''}`;el('downloadBtn').disabled=false;setupAltUI();showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
+    setStatus('Calculating Plan and MRP…');results=makeResults();el('planCount').textContent=fmt(results.plan.length);el('fgShortage').textContent=fmt(results.plan.reduce((s,r)=>s+r.shortage,0));el('mrpCount').textContent=fmt(results.mrp.length);el('newPr').textContent=fmt(results.mrp.reduce((s,r)=>s+r.newPR,0));el('summary').classList.add('show');el('output').classList.add('show');const poprNote=poPrLabelWarning();el('outputSub').textContent=`${results.plan.length} Plan items and ${results.mrp.length} MRP items created. BOM mapping: ${results.bomColumns.parent} → ${results.bomColumns.child} × ${results.bomColumns.qty}.${results.unmatched?` ${results.unmatched} Plan item(s) have no BOM match and were not exploded.`:''}${results.altProvided?` ${results.altStats.withAlt} MRP item(s) have an alternative (${results.altStats.withMultiple} with more than one).`:''}${poprNote?` ${poprNote}`:''}`;el('downloadBtn').disabled=false;setupAltUI();renderBasisNote();showResults();setStatus('Done — review the results or download the Excel output.')}catch(e){setStatus(e.message,true)}});
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showResults(t.dataset.view)));el('downloadBtn').addEventListener('click',exportResults);el('altBtn').addEventListener('click',toggleAltPanel);
   const themeToggle=el('themeToggle'),themeIcon=el('themeIcon'),themeText=el('themeText');
   const setTheme=theme=>{document.body.classList.toggle('dark',theme==='dark');themeIcon.textContent=theme==='dark'?'☀':'☾';themeText.textContent=theme==='dark'?'Light mode':'Dark mode';localStorage.setItem('mrp-theme',theme)};
