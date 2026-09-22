@@ -221,9 +221,6 @@
       const parent=String(cell(row,bS.parent)).trim(),child=String(cell(row,bS.child)).trim(),qty=number(cell(row,bS.qty));
       if(!parent||!child||!qty)return;
       if(isTotalLabel(parent)||isTotalLabel(child))return;
-      // Some ERP BOM exports include a "Depth 1" row per FG where Item == FG itself (the finished good
-      // referencing its own code, qty 1). That is BOM metadata, not a real component.
-      if(itemKey(parent)===itemKey(child))return;
       const pk=itemKey(parent), live=shortageByFG.get(pk)||0;
       bomParents.add(pk);
       let req=live*qty;
@@ -309,7 +306,7 @@
     const range=XLSX.utils.decode_range(source['!ref']), hdr=range.s.r;
     const headerText=c=>{const cl=source[XLSX.utils.encode_cell({r:hdr,c})];return cl?String(cl.w??cl.v??'').trim():''};
     const findCol=test=>{for(let c=range.s.c;c<=range.e.c;c++){if(test(headerText(c)))return c}return -1};
-    const parentCol=findCol(h=>h===String(cols.parent).trim()), qtyCol=findCol(h=>h===String(cols.qty).trim()), childCol=findCol(h=>h===String(cols.child).trim());
+    const parentCol=findCol(h=>h===String(cols.parent).trim()), qtyCol=findCol(h=>h===String(cols.qty).trim());
     let planCol=findCol(h=>['plan','planqty'].includes(normalize(h))), reqCol=findCol(h=>['reqqty','requiredqty','reqquantity'].includes(normalize(h)));
     if(parentCol<0||qtyCol<0||qtyCol===planCol||qtyCol===reqCol) return source;
     const ws=Object.assign({},source);
@@ -320,9 +317,7 @@
       const fgCell=source[XLSX.utils.encode_cell({r,c:parentCol})], fg=fgCell?String(fgCell.v??'').trim():'';
       if(!fg||isTotalLabel(fg)) continue;
       const qtyCell=source[XLSX.utils.encode_cell({r,c:qtyCol})];
-      // Self-row (Item == FG, "Depth 1") is BOM metadata, not a component: MRP ignores it, so PLAN/Req. QTY stay 0 here too.
-      const childCell=childCol>=0?source[XLSX.utils.encode_cell({r,c:childCol})]:null, isSelfRow=childCell&&itemKey(String(childCell.v??'').trim())===itemKey(fg);
-      const live=isSelfRow?0:(shortageByFG.get(itemKey(fg))||0), qty=number(qtyCell?qtyCell.v:0);
+      const live=shortageByFG.get(itemKey(fg))||0, qty=number(qtyCell?qtyCell.v:0);
       const planAddr=XLSX.utils.encode_cell({r,c:planCol}), reqAddr=XLSX.utils.encode_cell({r,c:reqCol});
       if(basis==='stored'){
         // Values already in the BOM are kept exactly as they are; only blank cells are filled in.
